@@ -6,15 +6,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
-import sim.MallSim;
 import sim.model.Agent;
 import sim.model.Board;
 import sim.model.Mall;
 import sim.model.helpers.Direction;
 import sim.model.helpers.Misc;
 import sim.model.helpers.MyPoint;
+import sim.model.helpers.Rand;
 
 public final class Ped4 implements MovementAlgorithm {
 
@@ -52,8 +51,6 @@ public final class Ped4 implements MovementAlgorithm {
     }
 
     // TODO: jak rozwiązać problem różnych v_max dla różnych ludzi?
-
-    private static Random r = MallSim.r;
 
     /**
      * Identyfikatory "pasów ruchu" (
@@ -150,7 +147,7 @@ public final class Ped4 implements MovementAlgorithm {
                 && board.getCell(p).getAgent().getDirection().isHorizontal())
             candidates.add(board.getCell(p).getAgent());
 
-        return (candidates.size() == 0) ? null : candidates.get(r.nextInt(candidates.size()));
+        return (candidates.size() == 0) ? null : candidates.get(Rand.nextInt(candidates.size()));
     }
 
 
@@ -192,7 +189,7 @@ public final class Ped4 implements MovementAlgorithm {
             }
 
             if (!lanes.isEmpty()) {
-                Point dest = lanes.get(r.nextInt(lanes.size()));
+                Point dest = lanes.get(Rand.nextInt(lanes.size()));
                 Misc.swapAgent(p, dest);
                 return;
             }
@@ -205,7 +202,7 @@ public final class Ped4 implements MovementAlgorithm {
             }
 
             if (!lanes.isEmpty()) {
-                Point dest = lanes.get(r.nextInt(lanes.size()));
+                Point dest = lanes.get(Rand.nextInt(lanes.size()));
                 Misc.swapAgent(p, dest);
                 return;
             }
@@ -229,7 +226,7 @@ public final class Ped4 implements MovementAlgorithm {
         // potencjału
 
         if (!lanes.isEmpty()) {
-            Point dest = lanes.get(r.nextInt(lanes.size()));
+            Point dest = lanes.get(Rand.nextInt(lanes.size()));
             Misc.swapAgent(p, dest);
         }
     }
@@ -376,7 +373,7 @@ public final class Ped4 implements MovementAlgorithm {
             }
 
             if (!l.isEmpty()) {
-                Point dest = l.get(r.nextInt(l.size()));
+                Point dest = l.get(Rand.nextInt(l.size()));
                 Agent t = board.getCell(dest).getAgent();
                 p_exchg = (agent.getAgility() + t.getAgility()) / 2;
 
@@ -406,7 +403,7 @@ public final class Ped4 implements MovementAlgorithm {
             }
 
             if (!l.isEmpty()) {
-                Point dest = l.get(r.nextInt(l.size()));
+                Point dest = l.get(Rand.nextInt(l.size()));
                 Agent t = board.getCell(dest).getAgent();
                 p_exchg = (agent.getAgility() + t.getAgility()) / 2;
 

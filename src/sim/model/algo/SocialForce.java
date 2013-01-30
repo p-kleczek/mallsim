@@ -6,15 +6,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
-import sim.MallSim;
 import sim.model.Agent;
 import sim.model.Board;
 import sim.model.Mall;
 import sim.model.helpers.Direction;
 import sim.model.helpers.Misc;
 import sim.model.helpers.MyPoint;
+import sim.model.helpers.Rand;
 
 /* 
  * FIXME: blokowanie, gdy zbyt silne pole: osoba krąży na granicy pola
@@ -34,8 +33,6 @@ import sim.model.helpers.MyPoint;
 public class SocialForce implements MovementAlgorithm {
 
 	private static MovementAlgorithm instance = new SocialForce();
-
-	private static Random r = MallSim.r;
 
 	private SocialForce() {
 	}
@@ -167,7 +164,7 @@ public class SocialForce implements MovementAlgorithm {
 				closestPoints.add(p);
 		}
 
-		return closestPoints.get(r.nextInt(closestPoints.size()));
+		return closestPoints.get(Rand.nextInt(closestPoints.size()));
 	}
 
 	/**

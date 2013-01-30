@@ -11,170 +11,134 @@ import sim.model.helpers.Vec;
 
 public class Board {
 
-    private Cell[][] grid;
+	private Cell[][] grid;
 
+	public Board(Dimension dimension) {
+		grid = new Cell[dimension.height][dimension.width];
 
-    public Board(Dimension dimension) {
-        grid = new Cell[dimension.height][dimension.width];
+		for (int y = 0; y < dimension.height; y++)
+			for (int x = 0; x < dimension.width; x++)
+				grid[y][x] = new Cell(Cell.Type.PASSABLE, Ped4.getInstance());
+	}
 
-        for (int y = 0; y < dimension.height; y++)
-            for (int x = 0; x < dimension.width; x++)
-                grid[y][x] = new Cell(Cell.Type.PASSABLE, Ped4.getInstance());
-    }
+	public void reset() {
+		Point p = new Point();
+		for (int y = 0; y < getDimension().height; y++)
+			for (int x = 0; x < getDimension().width; x++) {
+				p.setLocation(x, y);
+				getCell(p).clearVisitsCounter();
+				Misc.setAgent(null, p);
+			}
+	}
 
+	public Board(Cell[][] grid) {
+		assert grid != null;
 
-    public void reset() {
-        Point p = new Point();
-        for (int y = 0; y < getDimension().height; y++)
-            for (int x = 0; x < getDimension().width; x++) {
-                p.setLocation(x, y);
-                getCell(p).clearVisitsCounter();
-                Misc.setAgent(null, p);
-            }
-    }
+		this.grid = grid;
+	}
 
+	public boolean isOnBoard(Point p) {
+		return p.x >= 0 && p.y >= 0 && p.x < getDimension().width
+				&& p.y < getDimension().height;
+	}
 
-    public Board(Cell[][] grid) {
-        assert grid != null;
+	public Dimension getDimension() {
+		return new Dimension(grid[0].length, grid.length);
+	}
 
-        this.grid = grid;
-    }
+	public void setCell(Point p, Cell cell) {
+		assert isOnBoard(p);
+		assert cell != null;
 
+		grid[p.y][p.x] = cell;
+	}
 
-    public boolean isOnBoard(Point p) {
-        return p.x >= 0 && p.y >= 0 && p.x < getDimension().width && p.y < getDimension().height;
-    }
+	public Cell getCell(Point p) {
+		assert isOnBoard(p);
 
+		return grid[p.y][p.x];
+	}
 
-    public Dimension getDimension() {
-        return new Dimension(grid[0].length, grid.length);
-    }
+	public void computeForceField() {
+		// Clear force field.
+		Point cellCoord = new Point();
 
+		for (int y = 0; y < getDimension().height; y++) {
+			for (int x = 0; x < getDimension().width; x++) {
+				cellCoord.setLocation(x, y);
+				Cell cell = getCell(cellCoord);
 
-    public void setCell(Point p, Cell cell) {
-        assert isOnBoard(p);
-        assert cell != null;
+				cell.setForceValue(0);
 
-        grid[p.y][p.x] = cell;
-    }
+				if (cell.getAgent() != null)
+					modifyForceField(cell.getAgent(), cell.getAgent()
+							.getPosition(), 1);
 
+				cell.flipForceValue();
+			}
+		}
+	}
 
-    public Cell getCell(Point p) {
-        assert isOnBoard(p);
+	/**
+	 * Modyfikuje rozkład pola potencjału usuwając lub dodając wartości pola
+	 * danego agenta.
+	 * 
+	 * @param a
+	 * @param sign
+	 *            <code>1</code> dla dodana siły, <code>-1</code> dla odjęcia
+	 */
+	public void modifyForceField(Agent a, MyPoint pos, int sign) {
+		assert (Math.abs(sign) == 1);
 
-        return grid[p.y][p.x];
-    }
+		for (Map.Entry<Vec, Integer> entry : a.getForceField().entrySet()) {
+			Vec v = entry.getKey();
 
+			switch (a.getDirection()) {
+			case N:
+				v = v.rotate(0);
+				break;
+			case E:
+				v = v.rotate(1);
+				break;
+			case S:
+				v = v.rotate(2);
+				break;
+			case W:
+				v = v.rotate(3);
+				break;
+			}
 
-    public void computeForceField() {
-        // Clear force field.
-        Point curr = new Point();
+			MyPoint p = pos.add(v);
+			if (isOnBoard(p)) {
+				getCell(p).changeForce(entry.getValue() * sign);
 
-        for (int y = 0; y < getDimension().height; y++) {
-            for (int x = 0; x < getDimension().width; x++) {
-                curr.x = x;
-                curr.y = y;
-                getCell(curr).setForceValue(0);
-            }
-        }
+				if (getCell(p).getForceValue() > 0) {
+					System.err.println(p.toString() + " : "
+							+ getCell(p).getForceValue());
+					throw new AssertionError();
+				}
 
-        for (int y = 0; y < getDimension().height; y++) {
-            for (int x = 0; x < getDimension().width; x++) {
-                curr.x = x;
-                curr.y = y;
+				getCell(p).flipForceValue();
+			}
+		}
+	}
 
-                if (getCell(curr).getAgent() != null)
-                    modifyForceField(getCell(curr).getAgent(), getCell(curr).getAgent().getPosition(), 1);
-            }
-        }
+	public int countAgents() {
+		int nAgents = 0;
+		for (int y = 0; y < getDimension().height; y++) {
+			for (int x = 0; x < getDimension().width; x++) {
+				Cell c = getCell(new Point(x, y));
+				if (c.getAgent() != null) {
+					nAgents++;
 
-        for (int y = 0; y < getDimension().height; y++) {
-            for (int x = 0; x < getDimension().width; x++) {
-                curr.x = x;
-                curr.y = y;
+				}
 
-                getCell(curr).flipForceValue();
-            }
-        }
-    }
+				// Agent nie może znajdować się na
+				// niedostępnym polu.
+				assert (!(!c.isPassable() && c.getAgent() != null));
+			}
+		}
 
-
-    public void printForceField() {
-        // Clear force field.
-        Point curr = new Point();
-
-        for (int y = 0; y < getDimension().height; y++) {
-            for (int x = 0; x < getDimension().width; x++) {
-                curr.x = x;
-                curr.y = y;
-                System.out.print(String.format("%3d", getCell(curr).getForceValue()));
-            }
-            System.out.println();
-        }
-        System.out.println();
-    }
-
-
-    /**
-     * Modyfikuje rozkład pola potencjału usuwając lub dodając wartości pola
-     * danego agenta.
-     * 
-     * @param a
-     * @param sign
-     *            <code>1</code> dla dodana siły, <code>-1</code> dla odjęcia
-     */
-    public void modifyForceField(Agent a, MyPoint pos, int sign) {
-        assert (Math.abs(sign) == 1);
-
-        for (Map.Entry<Vec, Integer> entry : a.getForceField().entrySet()) {
-            Vec v = entry.getKey();
-
-            switch (a.getDirection()) {
-            case N:
-                v = v.rotate(0);
-                break;
-            case E:
-                v = v.rotate(1);
-                break;
-            case S:
-                v = v.rotate(2);
-                break;
-            case W:
-                v = v.rotate(3);
-                break;
-            }
-
-            MyPoint p = pos.add(v);
-            if (isOnBoard(p)) {
-                getCell(p).changeForce(entry.getValue() * sign);
-
-                if (getCell(p).getForceValue() > 0) {
-                    System.err.println(p.toString() + " : " + getCell(p).getForceValue());
-                    throw new AssertionError();
-                }
-
-                getCell(p).flipForceValue();
-            }
-        }
-    }
-
-
-    public int countAgents() {
-        int nAgents = 0;
-        for (int y = 0; y < getDimension().height; y++) {
-            for (int x = 0; x < getDimension().width; x++) {
-                Cell c = getCell(new Point(x, y));
-                if (c.getAgent() != null) {
-                    nAgents++;
-
-                }
-
-                // Agent nie może znajdować się na
-                // niedostępnym polu.
-                assert (!(!c.isPassable() && c.getAgent() != null));
-            }
-        }
-
-        return nAgents;
-    }
+		return nAgents;
+	}
 }

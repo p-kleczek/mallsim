@@ -9,12 +9,11 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
-import java.util.Random;
 
-import sim.MallSim;
 import sim.model.Agent;
 import sim.model.Board;
 import sim.model.Cell;
+import sim.model.helpers.Rand;
 import sim.util.Logger;
 
 public class Tactical {
@@ -26,13 +25,11 @@ public class Tactical {
     public static final int PATH_SMOOTHING = 3;
 
     private boolean useMoore = true;
-    private Random r;
     private Board board;
 
 
     public Tactical(Board board) {
         this.board = board;
-        r = MallSim.r;
     }
 
 
@@ -42,7 +39,7 @@ public class Tactical {
 
 
     public void initializeTargets(Agent agent) {
-        int numTargets = MIN_TARGETS + r.nextInt(MAX_TARGETS - MIN_TARGETS);
+        int numTargets = MIN_TARGETS + Rand.nextInt(MAX_TARGETS - MIN_TARGETS);
 
         initializeTargets(agent, numTargets);
     }
@@ -78,7 +75,7 @@ public class Tactical {
         ArrayList<Point> targets = new ArrayList<Point>();
 
         while(targets.size() < numTargets) {
-            Point p = new Point(r.nextInt(dim.width), r.nextInt(dim.height));
+            Point p = new Point(Rand.nextInt(dim.width), Rand.nextInt(dim.height));
 
             if(board.getCell(p) != Cell.WALL) {
                 targets.add(p);

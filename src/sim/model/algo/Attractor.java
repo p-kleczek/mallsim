@@ -5,6 +5,10 @@ import sim.model.Agent;
 public class Attractor extends MallFeature {
     private int attraction = 0;
     private int holdTime = 0;
+    
+    /**
+     * Code of color used to mark this feature on the map. 
+     */
     private int pixelValue = 0xffffff;
 
     // TODO Compute attraction and holdTime from pv.
