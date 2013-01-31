@@ -17,421 +17,416 @@ import sim.model.helpers.Rand;
 import sim.util.Logger;
 
 public class Tactical {
-    public static final int HEURISTIC_FACTOR = 5;
-    public static final int SCORE_FACTOR = 100;
-    public static final int MAX_TARGETS = 15;
-    public static final int MIN_TARGETS = 1;
-    public static final int MAX_SEGMENT_SIZE = 7;
-    public static final int PATH_SMOOTHING = 3;
+	public static final int HEURISTIC_FACTOR = 5;
+	public static final int SCORE_FACTOR = 100;
+	public static final int MAX_TARGETS = 15;
+	public static final int MIN_TARGETS = 1;
+	public static final int MAX_SEGMENT_SIZE = 7;
+	public static final int PATH_SMOOTHING = 3;
 
-    private boolean useMoore = true;
-    private Board board;
+	public static void initializeTargets(Board board, Agent agent, boolean useMore) {
+		int numTargets = MIN_TARGETS + Rand.nextInt(MAX_TARGETS - MIN_TARGETS);
 
+		initializeTargets(board, agent, numTargets, useMore);
+	}
 
-    public Tactical(Board board) {
-        this.board = board;
-    }
+	public static void initializeTargets(Board board, Agent agent, int numTargets, boolean useMore) {
+		Logger.log(String.format("Initializing targets for %s...", agent));
 
+		Point[] targets = computeTargets(board, agent, numTargets);
 
-    public void useMooreNeighbourhood(boolean yn) {
-        useMoore = yn;
-    }
+		Logger.log(String.format("Picked %d target positions.", targets.length));
+		Logger.log("Generating paths...");
 
+		Point last = agent.getPosition();
+		for (Point target : targets) {
+			List<Point> midpoints = computePath(board, last, target, useMore);
 
-    public void initializeTargets(Agent agent) {
-        int numTargets = MIN_TARGETS + Rand.nextInt(MAX_TARGETS - MIN_TARGETS);
+			for (Point midpoint : midpoints) {
+				agent.addTarget(midpoint);
+			}
 
-        initializeTargets(agent, numTargets);
-    }
+			last = target;
+		}
 
+		Logger.log("Paths generated!");
+		Logger.log("Targets initialized!");
+	}
 
-    public void initializeTargets(Agent agent, int numTargets) {
-        Logger.log(String.format("Initializing targets for %s...", agent));
+	public static Point[] computeTargets(Board board, Agent agent, int numTargets) {
+		Dimension dim = board.getDimension();
 
-        Point[] targets = computeTargets(agent, numTargets);
+		ArrayList<Point> targets = new ArrayList<Point>();
 
-        Logger.log(String.format("Picked %d target positions.", targets.length));
-        Logger.log("Generating paths...");
+		while (targets.size() < numTargets) {
+			Point p = new Point(Rand.nextInt(dim.width),
+					Rand.nextInt(dim.height));
 
-        Point last = agent.getPosition();
-        for(Point target : targets) {
-            List<Point> midpoints = computePath(last, target);
+			if (board.getCell(p) != Cell.WALL) {
+				targets.add(p);
+			}
+		}
 
-            for(Point midpoint : midpoints) {
-                agent.addTarget(midpoint);
-            }
+		// Sort by overal distance:
+		Point[] targetArray = new Point[targets.size()];
+		targets.toArray(targetArray);
 
-            last = target;
-        }
+		Arrays.sort(targetArray, new PointComparator(agent.getPosition()));
 
-        Logger.log("Paths generated!");
-        Logger.log("Targets initialized!");
-    }
+		int size = targetArray.length;
 
+		for (int i = 1; i < size; ++i) {
+			Arrays.sort(targetArray, i, size, new PointComparator(
+					targetArray[i - 1]));
+		}
 
-    public Point[] computeTargets(Agent agent, int numTargets) {
-        Dimension dim = board.getDimension();
+		return targetArray;
+	}
 
-        ArrayList<Point> targets = new ArrayList<Point>();
+	public static List<Point> computePath(Board board, Point start, Point target, boolean useMoore) {
+		// NOTE O(N log H(target)) :(
 
-        while(targets.size() < numTargets) {
-            Point p = new Point(Rand.nextInt(dim.width), Rand.nextInt(dim.height));
+		int width = board.getDimension().width;
+		int height = board.getDimension().height;
 
-            if(board.getCell(p) != Cell.WALL) {
-                targets.add(p);
-            }
-        }
+		BitSet closed = new BitSet(width * height);
+		PriorityQueue<Node> open = new PriorityQueue<Node>(100,
+				new NodeComparator());
 
-        // Sort by overal distance:
-        Point[] targetArray = new Point[targets.size()];
-        targets.toArray(targetArray);
+		open.add(new Node(start, 0, heuristicCostEstimate(board, start, target)));
 
-        Arrays.sort(targetArray, new PointComparator(agent.getPosition()));
+		Node node = new Node(); // Only for lookups.
+		Node current = null;
 
-        int size = targetArray.length;
+		while (!open.isEmpty()) {
+			current = open.poll();
 
-        for(int i = 1; i < size; ++i) {
-            Arrays.sort(targetArray, i, size, new PointComparator(targetArray[i-1]));
-        }
+			Point c = current.point;
+			closed.set(c.y * width + c.x);
 
-        return targetArray;
-    }
+			if (c.equals(target)) {
+				break;
+			}
 
+			List<Point> neighbours = null;
 
-    public List<Point> computePath(Point start, Point target) {
-        // NOTE O(N log H(target)) :(
+			if (useMoore) {
+				neighbours = getNeighboursMoore(board, c);
+			} else {
+				neighbours = getNeighboursVonNeumann(board, c);
+			}
 
-        int width = board.getDimension().width;
-        int height = board.getDimension().height;
+			for (Point neighbour : neighbours) {
+				node.point = neighbour;
 
-        BitSet closed = new BitSet(width * height);
-        PriorityQueue<Node> open = new PriorityQueue<Node>(100, new NodeComparator());
+				if (closed.get(neighbour.y * width + neighbour.x)) {
+					continue;
+				}
+
+				int score = current.score + getScoreDelta(c, neighbour);
+
+				if (open.contains(node)) {
+					if (score <= node.score) {
+						Node n = null;
+
+						Iterator<Node> iter = open.iterator();
+
+						while (iter.hasNext()) {
+							n = iter.next();
+
+							if (n.equals(node))
+								break;
+						}
+
+						assert n != null; // Improbable, yet so, so scary...
+
+						n.prev = current;
+						n.score = score;
+						n.estimate = score
+								+ heuristicCostEstimate(board, neighbour,
+										target);
+					}
+				} else {
+					Node n = new Node(neighbour);
 
-        open.add(new Node(start, 0, heuristicCostEstimate(start, target)));
+					n.prev = current;
+					n.score = score;
+					n.estimate = score
+							+ heuristicCostEstimate(board, neighbour, target);
 
-        Node node = new Node(); // Only for lookups.
-        Node current = null;
+					open.add(n);
+				}
+			}
+		}
 
-        while(!open.isEmpty()) {
-            current = open.poll();
+		List<Point> allpoints = new ArrayList<Point>();
 
-            Point c = current.point;
-            closed.set(c.y * width + c.x);
+		if (current == null || !current.point.equals(target)) {
+			return allpoints; // Nowhere to go.
+		}
 
-            if(c.equals(target)) {
-                break;
-            }
+		while (current != null) {
+			allpoints.add(0, current.point);
+			current = current.prev;
+		}
 
-            List<Point> neighbours = null;
+		return selectMidpoints(board, allpoints);
+	}
 
-            if(useMoore) {
-                neighbours = getNeighboursMoore(c);
-            }
-            else {
-                neighbours = getNeighboursVonNeumann(c);
-            }
+	private static List<Point> selectMidpoints(Board board, List<Point> points) {
+		int size = points.size();
 
-            for(Point neighbour : neighbours) {
-                node.point = neighbour;
+		if (size > MAX_SEGMENT_SIZE) {
+			List<Point> midpoints = new ArrayList<Point>();
 
-                if(closed.get(neighbour.y * width + neighbour.x)) {
-                    continue;
-                }
+			int numSegments = size / MAX_SEGMENT_SIZE;
 
-                int score = current.score + getScoreDelta(c, neighbour);
+			for (int i = 0; i < numSegments; ++i) {
+				int s = i * MAX_SEGMENT_SIZE;
+				int e = Math.min((i + 1) * MAX_SEGMENT_SIZE, size - 1);
 
-                if(open.contains(node)) {
-                    if(score <= node.score) {
-                        Node n = null;
+				List<Point> segment = selectMidpoints(board, points, s, e);
 
-                        Iterator<Node> iter = open.iterator();
+				// NOTE For the first segment its starting point is the Agent
+				// position,
+				// NOTE which is not a part of the path.
+				// NOTE For all other segments their starting points are the
+				// same as the ending
+				// NOTE points of the previous segments, so we can safely remove
+				// them.
 
-                        while(iter.hasNext()) {
-                            n = iter.next();
+				if (segment.size() > 1)
+					segment.remove(0);
+				midpoints.addAll(segment);
+			}
 
-                            if(n.equals(node)) break;
-                        }
+			return midpoints;
+		} else {
+			return selectMidpoints(board, points, 0, size - 1);
+		}
+	}
 
-                        assert n != null; // Improbable, yet so, so scary...
+	private static List<Point> selectMidpoints(Board board, List<Point> points,
+			int start, int end) {
+		// NOTE O(N log N) :(
 
-                        n.prev = current;
-                        n.score = score;
-                        n.estimate = score + heuristicCostEstimate(neighbour, target);
-                    }
-                }
-                else {
-                    Node n = new Node(neighbour);
+		List<Point> result = new ArrayList<Point>();
 
-                    n.prev = current;
-                    n.score = score;
-                    n.estimate = score + heuristicCostEstimate(neighbour, target);
+		Point s = points.get(start);
+		Point e = points.get(end);
 
-                    open.add(n);
-                }
-            }
-        }
+		if (end == start) {
+			result.add(s);
+		}
+		if (end - start < PATH_SMOOTHING) {
+			for (int i = start; i <= end; ++i) {
+				result.add(points.get(i));
+			}
+		} else if (lineClear(board, s, e)) {
+			result.add(s);
+			result.add(e);
+		} else {
+			int middle = (start + end) / 2;
 
-        List<Point> allpoints = new ArrayList<Point>();
+			List<Point> a = selectMidpoints(board, points, start, middle);
+			List<Point> b = selectMidpoints(board, points, middle, end);
+			if (b.size() > 1)
+				b.remove(0); // NOTE We don't want midpoint duplication.
 
-        if(current == null || !current.point.equals(target)) {
-            return allpoints; // Nowhere to go.
-        }
+			result.addAll(a);
+			result.addAll(b);
+		}
 
-        while(current != null) {
-            allpoints.add(0, current.point);
-            current = current.prev;
-        }
+		return result;
+	}
 
-        return selectMidpoints(allpoints);
-    }
+	private static boolean lineClear(Board board, Point a, Point b) {
+		// NOTE O(N) :(
 
-    private List<Point> selectMidpoints(List<Point> points) {
-        int size = points.size();
+		if (a.equals(b))
+			return true;
 
-        if(size > MAX_SEGMENT_SIZE) {
-            List<Point> midpoints = new ArrayList<Point>();
+		Point iter = new Point(a);
 
-            int numSegments = size / MAX_SEGMENT_SIZE;
+		double x = a.x;
+		double y = a.y;
+		double dx = b.x - a.x;
+		double dy = b.y - a.y;
 
-            for(int i = 0; i < numSegments; ++i) {
-                int s = i * MAX_SEGMENT_SIZE;
-                int e = Math.min((i+1) * MAX_SEGMENT_SIZE, size-1);
+		double len = Math.sqrt(dx * dx + dy * dy);
 
-                List<Point> segment = selectMidpoints(points, s, e);
+		dx /= len;
+		dy /= len;
 
-                // NOTE For the first segment its starting point is the Agent position,
-                // NOTE which is not a part of the path.
-                // NOTE For all other segments their starting points are the same as the ending
-                // NOTE points of the previous segments, so we can safely remove them.
+		while (!iter.equals(b)) {
+			iter.x = (int) x;
+			iter.y = (int) y;
 
-                if(segment.size() > 1) segment.remove(0);
-                midpoints.addAll(segment);
-            }
+			if (!board.isOnBoard(iter) || (board.getCell(iter) == Cell.WALL))
+				return false;
 
-            return midpoints;
-        }
-        else {
-            return selectMidpoints(points, 0, size-1);
-        }
-    }
+			x += dx;
+			y += dy;
+		}
 
-    private List<Point> selectMidpoints(List<Point> points, int start, int end) {
-        // NOTE O(N log N) :(
+		return true;
+	}
 
-        List<Point> result = new ArrayList<Point>();
+	private static int heuristicCostEstimate(Board board, Point p, Point target) {
+		int score = (int) (SCORE_FACTOR * HEURISTIC_FACTOR * p.distance(target));
 
-        Point s = points.get(start);
-        Point e = points.get(end);
+		MallFeature mf = board.getCell(p).getFeature();
 
-        if(end == start) {
-            result.add(s);
-        }
-        if(end - start < PATH_SMOOTHING) {
-            for(int i = start; i <= end; ++i) {
-                result.add(points.get(i));
-            }
-        }
-        else if(lineClear(s, e)) {
-            result.add(s);
-            result.add(e);
-        }
-        else {
-            int middle = (start + end) / 2;
+		if (mf != null) {
+			return mf.modifyHeuristicEstimate(score);
+		}
 
-            List<Point> a = selectMidpoints(points, start, middle);
-            List<Point> b = selectMidpoints(points, middle, end);
-            if(b.size() > 1) b.remove(0); // NOTE We don't want midpoint duplication.
-
-            result.addAll(a);
-            result.addAll(b);
-        }
-
-        return result;
-    }
-
-
-    private boolean lineClear(Point a, Point b) {
-        // NOTE O(N) :(
-
-        if(a.equals(b)) return true;
-
-        Point iter = new Point(a);
-
-        double x = a.x;
-        double y = a.y;
-        double dx = b.x - a.x;
-        double dy = b.y - a.y;
-
-        double len = Math.sqrt(dx * dx + dy * dy);
-
-        dx /= len;
-        dy /= len;
-
-        while(!iter.equals(b)) {
-            iter.x = (int) x;
-            iter.y = (int) y;
-
-            if(!board.isOnBoard(iter) || (board.getCell(iter) == Cell.WALL)) return false;
-
-            x += dx;
-            y += dy;
-        }
-
-        return true;
-    }
-
-
-    private int heuristicCostEstimate(Point p, Point target) {
-        int score = (int) (SCORE_FACTOR * HEURISTIC_FACTOR *  p.distance(target));
-
-        MallFeature mf = board.getCell(p).getFeature();
-
-        if(mf != null) {
-            return mf.modifyHeuristicEstimate(score);
-        }
-
-        return score;
-    }
-
-
-    private List<Point> getNeighboursVonNeumann(Point point) {
-        int x = point.x;
-        int y = point.y;
-
-        Dimension dim = board.getDimension();
-        int w = dim.width;
-        int h = dim.height;
-
-        Point p = new Point(); // For lookups.
-
-        ArrayList<Point> neighbours = new ArrayList<Point>();
-
-        for(int j = -1; j <= 1 ; ++j) {
-            for(int i = -1; i <= 1 ; ++i) {
-                if(Math.abs(i) == Math.abs(j)) continue;
-
-                p.x = x+i;
-                p.y = y+j;
-
-                if(p.x < 0) continue;
-                if(p.x >= w) continue;
-                if(p.y < 0) continue;
-                if(p.y >= h) continue;
-
-                if(board.getCell(p) != Cell.WALL) {
-                    neighbours.add(new Point(p.x, p.y));
-                }
-            }
-        }
-
-        return neighbours;
-    }
-
-
-    private List<Point> getNeighboursMoore(Point point) {
-        int x = point.x;
-        int y = point.y;
-
-        Dimension dim = board.getDimension();
-        int w = dim.width;
-        int h = dim.height;
-
-        Point p = new Point(); // For lookups.
-
-        ArrayList<Point> neighbours = new ArrayList<Point>();
-
-        for(int j = y-1; j <= y+1 ; ++j) {
-            for(int i = x-1; i <= x+1; ++i) {
-                if(x == i && y == j) continue;
-                if(i < 0 || i >= w)  continue;
-                if(j < 0 || j >= h)  continue;
-
-                p.x = i;
-                p.y = j;
-
-                if(board.getCell(p) != Cell.WALL) {
-                    neighbours.add(new Point(i, j));
-                }
-            }
-        }
-
-        return neighbours;
-    }
-
-
-    private int getScoreDelta(Point a, Point b) {
-        return SCORE_FACTOR;
-    }
-
-
-    private static class Node {
-        public Point point = null;
-        public int score = 0;
-        public int estimate = 0;
-        public Node prev = null;
-
-        public Node() {
-            this(null);
-        }
-
-        public Node(Point point) {
-            this(point, 0, 0);
-        }
-
-        public Node(Point point, int score, int estimate) {
-            this.point = point;
-            this.score = score;
-            this.estimate = estimate;
-        }
-
-        public boolean equals(Object o) {
-            if(o instanceof Node) {
-                Node n = (Node) o;
-                return this.point.equals(n.point);
-            }
-
-            return false;
-        }
-    }
-
-
-    private static class NodeComparator implements Comparator {
-        public int compare(Object a, Object b) {
-            Node na = (Node) a;
-            Node nb = (Node) b;
-
-            return na.estimate - nb.estimate;
-        }
-
-        public boolean equals(Object o) {
-            if(o instanceof NodeComparator) {
-                return this == o;
-            }
-            return false;
-        }
-    }
-
-    private static class PointComparator implements Comparator {
-        private Point p = null;
-
-        public PointComparator(Point p) {
-            this.p = p;
-        }
-
-        public int compare(Object a, Object b) {
-            Point pa = (Point) a;
-            Point pb = (Point) b;
-
-            if(pa.distance(pb) < 20) return 0;
-
-            return (int) (p.distanceSq(pa) - p.distanceSq(pb));
-        }
-
-        public boolean equals(Object o) {
-            if(o instanceof NodeComparator) {
-                return this == o;
-            }
-            return false;
-        }
-    }
+		return score;
+	}
+
+	private static List<Point> getNeighboursVonNeumann(Board board, Point point) {
+		int x = point.x;
+		int y = point.y;
+
+		Dimension dim = board.getDimension();
+		int w = dim.width;
+		int h = dim.height;
+
+		Point p = new Point(); // For lookups.
+
+		ArrayList<Point> neighbours = new ArrayList<Point>();
+
+		for (int j = -1; j <= 1; ++j) {
+			for (int i = -1; i <= 1; ++i) {
+				if (Math.abs(i) == Math.abs(j))
+					continue;
+
+				p.x = x + i;
+				p.y = y + j;
+
+				if (p.x < 0)
+					continue;
+				if (p.x >= w)
+					continue;
+				if (p.y < 0)
+					continue;
+				if (p.y >= h)
+					continue;
+
+				if (board.getCell(p) != Cell.WALL) {
+					neighbours.add(new Point(p.x, p.y));
+				}
+			}
+		}
+
+		return neighbours;
+	}
+
+	private static List<Point> getNeighboursMoore(Board board, Point point) {
+		int x = point.x;
+		int y = point.y;
+
+		Dimension dim = board.getDimension();
+		int w = dim.width;
+		int h = dim.height;
+
+		Point p = new Point(); // For lookups.
+
+		ArrayList<Point> neighbours = new ArrayList<Point>();
+
+		for (int j = y - 1; j <= y + 1; ++j) {
+			for (int i = x - 1; i <= x + 1; ++i) {
+				if (x == i && y == j)
+					continue;
+				if (i < 0 || i >= w)
+					continue;
+				if (j < 0 || j >= h)
+					continue;
+
+				p.x = i;
+				p.y = j;
+
+				if (board.getCell(p) != Cell.WALL) {
+					neighbours.add(new Point(i, j));
+				}
+			}
+		}
+
+		return neighbours;
+	}
+
+	private static int getScoreDelta(Point a, Point b) {
+		return SCORE_FACTOR;
+	}
+
+	private static class Node {
+		public Point point = null;
+		public int score = 0;
+		public int estimate = 0;
+		public Node prev = null;
+
+		public Node() {
+			this(null);
+		}
+
+		public Node(Point point) {
+			this(point, 0, 0);
+		}
+
+		public Node(Point point, int score, int estimate) {
+			this.point = point;
+			this.score = score;
+			this.estimate = estimate;
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof Node) {
+				Node n = (Node) o;
+				return this.point.equals(n.point);
+			}
+
+			return false;
+		}
+	}
+
+	private static class NodeComparator implements Comparator {
+		public int compare(Object a, Object b) {
+			Node na = (Node) a;
+			Node nb = (Node) b;
+
+			return na.estimate - nb.estimate;
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof NodeComparator) {
+				return this == o;
+			}
+			return false;
+		}
+	}
+
+	private static class PointComparator implements Comparator {
+		private Point p = null;
+
+		public PointComparator(Point p) {
+			this.p = p;
+		}
+
+		public int compare(Object a, Object b) {
+			Point pa = (Point) a;
+			Point pb = (Point) b;
+
+			if (pa.distance(pb) < 20)
+				return 0;
+
+			return (int) (p.distanceSq(pa) - p.distanceSq(pb));
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof NodeComparator) {
+				return this == o;
+			}
+			return false;
+		}
+	}
 }

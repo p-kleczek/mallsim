@@ -122,24 +122,4 @@ public class Tests {
 		}
 	}
 
-	public static void testTactical(Board board) {
-		Tactical tactical = new Tactical(board);
-		// tactical.useMooreNeighbourhood(false);
-
-		if (board.countAgents() == 0) {
-			Misc.setAgent(new Agent(MovementBehavior.DYNAMIC), new Point(2, 2));
-		}
-
-		for (int y = 0; y < board.getDimension().height; y++) {
-			for (int x = 0; x < board.getDimension().width; x++) {
-				Point p = new Point(x, y);
-				Agent a = board.getCell(p).getAgent();
-				if (a != null) {
-					a.clearTargets();
-					tactical.initializeTargets(a);
-				}
-			}
-		}
-	}
-
 }

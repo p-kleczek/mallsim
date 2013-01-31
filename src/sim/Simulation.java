@@ -1,22 +1,32 @@
 package sim;
 
 import java.awt.Point;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import sim.control.GuiState;
+import sim.control.TacticalWorker;
 import sim.model.Agent;
 import sim.model.Board;
 import sim.model.Mall;
+import sim.model.Agent.MovementBehavior;
+import sim.model.algo.Tactical;
+import sim.model.helpers.Misc;
 import sim.model.helpers.Rand;
 import sim.tests.Tests;
 import sim.util.AviRecorder;
 
 public class Simulation extends Observable implements Runnable {
 
+	public static final int NUM_TACTICAL_THREADS = 4;
+	
 	private Mall mall;
 	private Board board;
 	private AviRecorder aviRecorder;
@@ -178,7 +188,7 @@ public class Simulation extends Observable implements Runnable {
 					board.getCell(p).clearVisitsCounter();
 				}
 
-			Tests.testTactical(board);
+			computePaths(board);
 
 			int nAgentsBegin = board.countAgents();
 			nTotalAgents += nAgentsBegin;
@@ -226,5 +236,41 @@ public class Simulation extends Observable implements Runnable {
 		System.out.println(String.format(
 				"Sukcesy agentów:\t %d / %d\t (%d%%)", nAgentSuccesses,
 				nTotalAgents, nAgentSuccesses * 100 / nTotalAgents));
+	}
+	
+	private void computePaths(Board board) {
+		// tactical.useMooreNeighbourhood(false);
+
+		BlockingQueue<Agent> agentsToCompute = new LinkedBlockingQueue<>(5);
+		List<TacticalWorker> threads = new ArrayList<>(NUM_TACTICAL_THREADS);
+		
+		for (int i = 0; i < NUM_TACTICAL_THREADS; i++) {
+			TacticalWorker t = new TacticalWorker(agentsToCompute, board);
+			threads.add(t);
+			t.start();
+		}
+		
+		if (board.countAgents() == 0) {
+			Misc.setAgent(new Agent(MovementBehavior.DYNAMIC), new Point(2, 2));
+		}
+
+		Point p = new Point();
+		for (int y = 0; y < board.getDimension().height; y++) {
+			for (int x = 0; x < board.getDimension().width; x++) {
+				p.setLocation(x, y);
+				Agent a = board.getCell(p).getAgent();
+				if (a != null) {
+					try {
+						agentsToCompute.put(a);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		}
+		
+		for (TacticalWorker t : threads) {
+			t.setStopped();
+		}
 	}
 }
