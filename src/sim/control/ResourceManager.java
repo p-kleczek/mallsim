@@ -223,10 +223,10 @@ public class ResourceManager {
 	}
 
 	public static void randomize(Board b, int nAgents) {
-		Dimension d = b.getDimension();
 
 		for (int i = 0; i < nAgents; i++) {
-			Point p = new Point(Rand.nextInt(d.width), Rand.nextInt(d.height));
+			Point p = new Point(Rand.nextInt(b.getWidth()), Rand.nextInt(b
+					.getHeight()));
 
 			if (b.getCell(p).isPassable()) {
 				MovementBehavior mb = MovementBehavior.values()[Rand

@@ -1,10 +1,8 @@
 package sim.model.algo;
 
-import java.awt.Point;
 import java.util.Map;
 
 import sim.model.Agent;
-import sim.model.Board;
 
 /*
  * FIXME: problem, gdy dwóch agentów ma dokładnie tą samą płytkę-cel (jeden krąży wokół pola)
@@ -28,7 +26,7 @@ public interface MovementAlgorithm {
      * @param a
      *            agent, dla którego wykonujemy algorytm
      */
-    public abstract void prepare(Agent a);
+    public void prepare(Agent a);
 
 
     /**
@@ -41,5 +39,5 @@ public interface MovementAlgorithm {
      *            mapa określająca ilość jeszcze niewykorzystanych punktów ruchu
      *            agentów
      */
-    public abstract void nextIterationStep(Agent a, Map<Agent, Integer> mpLeft);
+    public void nextIterationStep(Agent a, Map<Agent, Integer> mpLeft);
 }

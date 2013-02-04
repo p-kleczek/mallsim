@@ -1,10 +1,8 @@
 package sim.model.algo;
 
-import java.awt.Point;
 import java.util.Map;
 
 import sim.model.Agent;
-import sim.model.Board;
 
 public class Empty implements MovementAlgorithm {
 

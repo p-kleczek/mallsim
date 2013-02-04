@@ -99,7 +99,7 @@ public class MallFrame extends JFrame {
 
 			public void actionPerformed(ActionEvent arg0) {
 				Rand.reseed();
-				MallSim.runAlgoTest();
+				MallSim.runSimulation();
 			}
 		});
 

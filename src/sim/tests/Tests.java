@@ -16,8 +16,8 @@ import sim.model.helpers.Rand;
 
 public class Tests {
 	public static void testSocialForce(Board b) {
-		for (int y = 0; y < b.getDimension().height; y++)
-			for (int x = 0; x < b.getDimension().width; x++) {
+		for (int y = 0; y < b.getHeight(); y++)
+			for (int x = 0; x < b.getWidth(); x++) {
 				Point p = new Point(x, y);
 				Misc.setAgent(null, p);
 				b.getCell(p).setAlgorithm(SocialForce.getInstance());
@@ -57,15 +57,15 @@ public class Tests {
 	public static void testSocialForceMassive(Board b) {
 		final int N_AGENTS = 10;
 
-		Dimension d = b.getDimension();
 		for (int i = 0; i < N_AGENTS; i++) {
-			Point p = new Point(Rand.nextInt(d.width), Rand.nextInt(d.height));
+			Point p = new Point(Rand.nextInt(b.getWidth()), Rand.nextInt(b
+					.getHeight()));
 			Cell c = b.getCell(p);
 
 			if (c != Cell.WALL) {
 				Agent a = new Agent(MovementBehavior.DYNAMIC);
-				a.addTarget(new Point(Rand.nextInt(d.width), Rand
-						.nextInt(d.height)));
+				a.addTarget(new Point(Rand.nextInt(b.getWidth()), Rand
+						.nextInt(b.getHeight())));
 				a.setInitialDistanceToTarget(p.distance(a.getTarget()));
 				a.setDirection(Direction.values()[Rand.nextInt(Direction
 						.values().length)]);
@@ -75,8 +75,8 @@ public class Tests {
 	}
 
 	public static void testPed4(Board b) {
-		for (int y = 0; y < b.getDimension().height; y++)
-			for (int x = 0; x < b.getDimension().width; x++) {
+		for (int y = 0; y < b.getHeight(); y++)
+			for (int x = 0; x < b.getWidth(); x++) {
 				Point p = new Point(x, y);
 				Misc.setAgent(null, p);
 				b.getCell(p).setAlgorithm(Ped4.getInstance());
@@ -87,8 +87,8 @@ public class Tests {
 	}
 
 	public static void testPed4Individual(Board b) {
-		for (int y = 0; y < b.getDimension().height; y++)
-			for (int x = 0; x < b.getDimension().width; x++)
+		for (int y = 0; y < b.getHeight(); y++)
+			for (int x = 0; x < b.getWidth(); x++)
 				Misc.setAgent(null, new Point(x, y));
 
 		for (int y = 3; y < 8; y++)
@@ -106,14 +106,14 @@ public class Tests {
 	public static void testPed4Massive(Board b) {
 		final int N_AGENTS = 20;
 
-		Dimension d = b.getDimension();
 		for (int i = 0; i < N_AGENTS; i++) {
-			Point p = new Point(Rand.nextInt(d.width), Rand.nextInt(d.height));
+			Point p = new Point(Rand.nextInt(b.getWidth()), Rand.nextInt(b
+					.getHeight()));
 
 			if (b.getCell(p) != Cell.WALL) {
 				Agent a = new Agent(MovementBehavior.DYNAMIC);
-				a.addTarget(new Point(Rand.nextInt(d.width), Rand
-						.nextInt(d.height)));
+				a.addTarget(new Point(Rand.nextInt(b.getWidth()), Rand
+						.nextInt(b.getHeight())));
 				a.setInitialDistanceToTarget(p.distance(a.getTarget()));
 				a.setDirection(Direction.values()[Rand.nextInt(Direction
 						.values().length)]);

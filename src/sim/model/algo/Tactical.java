@@ -54,13 +54,11 @@ public class Tactical {
 	}
 
 	public static Point[] computeTargets(Board board, Agent agent, int numTargets) {
-		Dimension dim = board.getDimension();
-
 		ArrayList<Point> targets = new ArrayList<Point>();
 
 		while (targets.size() < numTargets) {
-			Point p = new Point(Rand.nextInt(dim.width),
-					Rand.nextInt(dim.height));
+			Point p = new Point(Rand.nextInt(board.getWidth()),
+					Rand.nextInt(board.getHeight()));
 
 			if (board.getCell(p) != Cell.WALL) {
 				targets.add(p);
@@ -86,8 +84,8 @@ public class Tactical {
 	public static List<Point> computePath(Board board, Point start, Point target, boolean useMoore) {
 		// NOTE O(N log H(target)) :(
 
-		int width = board.getDimension().width;
-		int height = board.getDimension().height;
+		int width = board.getWidth();
+		int height = board.getHeight();
 
 		BitSet closed = new BitSet(width * height);
 		PriorityQueue<Node> open = new PriorityQueue<Node>(100,
@@ -288,9 +286,8 @@ public class Tactical {
 		int x = point.x;
 		int y = point.y;
 
-		Dimension dim = board.getDimension();
-		int w = dim.width;
-		int h = dim.height;
+		int w = board.getWidth();
+		int h = board.getHeight();
 
 		Point p = new Point(); // For lookups.
 
@@ -326,9 +323,8 @@ public class Tactical {
 		int x = point.x;
 		int y = point.y;
 
-		Dimension dim = board.getDimension();
-		int w = dim.width;
-		int h = dim.height;
+		int w = board.getWidth();
+		int h = board.getHeight();
 
 		Point p = new Point(); // For lookups.
 

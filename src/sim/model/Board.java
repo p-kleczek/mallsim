@@ -21,10 +21,13 @@ public class Board {
 				grid[y][x] = new Cell(Cell.Type.PASSABLE, Ped4.getInstance());
 	}
 
+	/**
+	 * Ustawia domyślne ustawienia pól.
+	 */
 	public void reset() {
 		Point p = new Point();
-		for (int y = 0; y < getDimension().height; y++)
-			for (int x = 0; x < getDimension().width; x++) {
+		for (int y = 0; y < getHeight(); y++)
+			for (int x = 0; x < getWidth(); x++) {
 				p.setLocation(x, y);
 				getCell(p).clearVisitsCounter();
 				Misc.setAgent(null, p);
@@ -32,30 +35,32 @@ public class Board {
 	}
 
 	public Board(Cell[][] grid) {
-		assert grid != null;
-
 		this.grid = grid;
 	}
 
+	/**
+	 * Sprawdza, czy punkt zawiera się w obszarze planszy.
+	 * 
+	 * @param p
+	 * @return
+	 */
 	public boolean isOnBoard(Point p) {
-		return p.x >= 0 && p.y >= 0 && p.x < getDimension().width
-				&& p.y < getDimension().height;
+		return p.x >= 0 && p.y >= 0 && p.x < getWidth() && p.y < getHeight();
 	}
 
-	public Dimension getDimension() {
-		return new Dimension(grid[0].length, grid.length);
+	public int getWidth() {
+		return grid[0].length;
+	}
+
+	public int getHeight() {
+		return grid.length;
 	}
 
 	public void setCell(Point p, Cell cell) {
-		assert isOnBoard(p);
-		assert cell != null;
-
 		grid[p.y][p.x] = cell;
 	}
 
 	public Cell getCell(Point p) {
-		assert isOnBoard(p);
-
 		return grid[p.y][p.x];
 	}
 
@@ -63,8 +68,8 @@ public class Board {
 		// Clear force field.
 		Point cellCoord = new Point();
 
-		for (int y = 0; y < getDimension().height; y++) {
-			for (int x = 0; x < getDimension().width; x++) {
+		for (int y = 0; y < getHeight(); y++) {
+			for (int x = 0; x < getWidth(); x++) {
 				cellCoord.setLocation(x, y);
 				Cell cell = getCell(cellCoord);
 
@@ -93,6 +98,8 @@ public class Board {
 		for (Map.Entry<Vec, Integer> entry : a.getForceField().entrySet()) {
 			Vec v = entry.getKey();
 
+			// Pole potencjału przechowywane jest w kierunku N - konieczny
+			// obrót.
 			switch (a.getDirection()) {
 			case N:
 				v = v.rotate(0);
@@ -125,8 +132,8 @@ public class Board {
 
 	public int countAgents() {
 		int nAgents = 0;
-		for (int y = 0; y < getDimension().height; y++) {
-			for (int x = 0; x < getDimension().width; x++) {
+		for (int y = 0; y < getHeight(); y++) {
+			for (int x = 0; x < getWidth(); x++) {
 				Cell c = getCell(new Point(x, y));
 				if (c.getAgent() != null) {
 					nAgents++;

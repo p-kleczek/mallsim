@@ -34,30 +34,30 @@ public class MallSim {
 					e.printStackTrace();
 				}
 
-				ResourceManager.loadShoppingMall("./data/malls/gk0.bmp",
-						"./data/malls/gk0map.bmp");
-
-				if (frame == null) {
-					frame = new MallFrame(Mall.getInstance(), aviRecorder);
-				}
-
-				frame.setVisible(true);
-
-				runAlgoTest();
+				prepare();
+				runSimulation();
 			}
 		});
+	}
+
+	private static void prepare() {
+		ResourceManager.loadShoppingMall("./data/malls/gk0.bmp",
+				"./data/malls/gk0map.bmp");
+
+		frame = new MallFrame(Mall.getInstance(), aviRecorder);
+		frame.setVisible(true);
 	}
 
 	/**
 	 * Testuje działanie algotymów ruchu.
 	 */
-	public static void runAlgoTest() {
+	public static void runSimulation() {
 		Mall.getInstance().reset();
 		Simulation loop = new Simulation(Mall.getInstance(), aviRecorder);
 		loop.addObserver(frame.getBoard());
 		Board b = Mall.getInstance().getBoard();
 		ResourceManager.randomize(Mall.getInstance().getBoard(),
-				b.getDimension().height * b.getDimension().width / 50);
+				b.getHeight() * b.getWidth() / 50);
 
 		if (simThread != null)
 			simThread.stop();
@@ -67,7 +67,6 @@ public class MallSim {
 		if (isSuspended)
 			simThread.suspend();
 	}
-
 
 	synchronized public static void setThreadState(boolean _isSuspended) {
 		isSuspended = _isSuspended;
