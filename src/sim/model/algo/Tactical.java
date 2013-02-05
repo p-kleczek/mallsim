@@ -1,6 +1,5 @@
 package sim.model.algo;
 
-import java.awt.Dimension;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,13 +23,15 @@ public class Tactical {
 	public static final int MAX_SEGMENT_SIZE = 7;
 	public static final int PATH_SMOOTHING = 3;
 
-	public static void initializeTargets(Board board, Agent agent, boolean useMore) {
+	public static void initializeTargets(Board board, Agent agent,
+			boolean useMore) {
 		int numTargets = MIN_TARGETS + Rand.nextInt(MAX_TARGETS - MIN_TARGETS);
 
 		initializeTargets(board, agent, numTargets, useMore);
 	}
 
-	public static void initializeTargets(Board board, Agent agent, int numTargets, boolean useMore) {
+	public static void initializeTargets(Board board, Agent agent,
+			int numTargets, boolean useMore) {
 		Logger.log(String.format("Initializing targets for %s...", agent));
 
 		Point[] targets = computeTargets(board, agent, numTargets);
@@ -53,7 +54,8 @@ public class Tactical {
 		Logger.log("Targets initialized!");
 	}
 
-	public static Point[] computeTargets(Board board, Agent agent, int numTargets) {
+	public static Point[] computeTargets(Board board, Agent agent,
+			int numTargets) {
 		ArrayList<Point> targets = new ArrayList<Point>();
 
 		while (targets.size() < numTargets) {
@@ -81,7 +83,8 @@ public class Tactical {
 		return targetArray;
 	}
 
-	public static List<Point> computePath(Board board, Point start, Point target, boolean useMoore) {
+	public static List<Point> computePath(Board board, Point start,
+			Point target, boolean useMoore) {
 		// NOTE O(N log H(target)) :(
 
 		int width = board.getWidth();
@@ -385,33 +388,29 @@ public class Tactical {
 		}
 	}
 
-	private static class NodeComparator implements Comparator {
-		public int compare(Object a, Object b) {
-			Node na = (Node) a;
-			Node nb = (Node) b;
-
-			return na.estimate - nb.estimate;
-		}
-
+	private static class NodeComparator implements Comparator<Node> {
 		public boolean equals(Object o) {
 			if (o instanceof NodeComparator) {
 				return this == o;
 			}
 			return false;
 		}
+
+		@Override
+		public int compare(Node n0, Node n1) {
+			return n0.estimate - n1.estimate;
+		}
 	}
 
-	private static class PointComparator implements Comparator {
+	private static class PointComparator implements Comparator<Point> {
 		private Point p = null;
 
 		public PointComparator(Point p) {
 			this.p = p;
 		}
 
-		public int compare(Object a, Object b) {
-			Point pa = (Point) a;
-			Point pb = (Point) b;
-
+		@Override
+		public int compare(Point pa, Point pb) {
 			if (pa.distance(pb) < 20)
 				return 0;
 

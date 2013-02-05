@@ -98,7 +98,7 @@ public class Agent extends Observable {
 	 * Flaga określająca, czy Agent został usunięty z symulacji.
 	 */
 	private boolean isDead = false;
-
+	
 	public Agent(MovementBehavior movementBehavior) {
 
 		try {
@@ -110,7 +110,7 @@ public class Agent extends Observable {
 			vMax = 1;
 			agility = 0.5;
 		}
-
+		
 		route = new LinkedList<Point>();
 		forceField = Collections.unmodifiableMap(initForceField());
 
@@ -175,9 +175,7 @@ public class Agent extends Observable {
 	}
 
 	public void setDirection(Direction direction) {
-		Mall.getInstance().getBoard().modifyForceField(this, getPosition(), -1);
 		this.direction = direction;
-		Mall.getInstance().getBoard().modifyForceField(this, getPosition(), 1);
 
 		setChanged();
 		notifyObservers();

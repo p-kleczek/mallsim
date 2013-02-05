@@ -15,6 +15,7 @@ public class MallSim {
 
 	static Thread simThread = null;
 	static MallFrame frame = null;
+	private static Simulation simulation = null;
 
 	static boolean isSuspended = false;
 
@@ -41,10 +42,12 @@ public class MallSim {
 	}
 
 	private static void prepare() {
-		ResourceManager.loadShoppingMall("./data/malls/gk0.bmp",
+		simulation = new Simulation(aviRecorder);
+		Mall mall = ResourceManager.loadShoppingMall("./data/malls/gk0.bmp",
 				"./data/malls/gk0map.bmp");
+		simulation.setMall(mall);
 
-		frame = new MallFrame(Mall.getInstance(), aviRecorder);
+		frame = new MallFrame(simulation.getMall(), aviRecorder);
 		frame.setVisible(true);
 	}
 
@@ -52,16 +55,13 @@ public class MallSim {
 	 * Testuje działanie algotymów ruchu.
 	 */
 	public static void runSimulation() {
-		Mall.getInstance().reset();
-		Simulation loop = new Simulation(Mall.getInstance(), aviRecorder);
-		loop.addObserver(frame.getBoard());
-		Board b = Mall.getInstance().getBoard();
-		ResourceManager.randomize(Mall.getInstance().getBoard(),
-				b.getHeight() * b.getWidth() / 50);
+		simulation.addObserver(frame.getBoard());
+		Board b = simulation.getMall().getBoard();
+		ResourceManager.randomize(b, b.getHeight() * b.getWidth() / 50);
 
 		if (simThread != null)
 			simThread.stop();
-		simThread = new Thread(loop);
+		simThread = new Thread(simulation);
 		simThread.start();
 
 		if (isSuspended)

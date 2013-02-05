@@ -1,6 +1,5 @@
 package sim.control;
 
-import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
@@ -20,7 +19,6 @@ import sim.model.algo.MallFeature;
 import sim.model.algo.Ped4;
 import sim.model.algo.SocialForce;
 import sim.model.algo.Spawner;
-import sim.model.helpers.Misc;
 import sim.model.helpers.Rand;
 import sim.util.Logger;
 
@@ -36,15 +34,17 @@ public class ResourceManager {
 	 * Loads shopping mall data from an image file.
 	 */
 
-	public static void loadShoppingMall(String mallFile, String featureMap) {
+	public static Mall loadShoppingMall(String mallFile, String featureMap) {
+		Mall mall = new Mall();
+
 		Logger.log("Loading mall: " + mallFile + " with featuremap: "
 				+ featureMap);
 
 		BufferedImage mallImage = null;
 		BufferedImage mapImage = null;
 
-		Raster mall = null;
-		Raster map = null;
+		Raster mallRaster = null;
+		Raster mapRaster = null;
 
 		Cell[][] grid = null;
 		Board b = null;
@@ -54,18 +54,18 @@ public class ResourceManager {
 
 		try {
 			mallImage = ImageIO.read(new File(mallFile));
-			mall = mallImage.getData();
+			mallRaster = mallImage.getData();
 
 			mapImage = ImageIO.read(new File(featureMap));
-			map = mapImage.getData();
+			mapRaster = mapImage.getData();
 
-			h = mall.getHeight();
-			w = mall.getWidth();
+			h = mallRaster.getHeight();
+			w = mallRaster.getWidth();
 
-			assert map.getHeight() == h;
-			assert map.getWidth() == w;
+			assert mapRaster.getHeight() == h;
+			assert mapRaster.getWidth() == w;
 
-			if (map.getHeight() != h || map.getWidth() != w) {
+			if (mapRaster.getHeight() != h || mapRaster.getWidth() != w) {
 				throw new RuntimeException(
 						"Mall file and fearturemap size do not match!");
 			}
@@ -74,7 +74,7 @@ public class ResourceManager {
 			grid = new Cell[h][w];
 
 			b = new Board(grid);
-			Mall.getInstance().setBoard(b);
+			mall.setBoard(b);
 
 			// Used to cache Attractors
 			HashMap<Integer, MallFeature> features = new HashMap<Integer, MallFeature>();
@@ -83,7 +83,7 @@ public class ResourceManager {
 
 			for (int i = 0; i < h; ++i) {
 				for (int j = 0; j < w; ++j) {
-					mall.getPixel(j, i, pixel);
+					mallRaster.getPixel(j, i, pixel);
 
 					// [type][context data 0][contex data 1]
 					switch (pixel[0]) {
@@ -105,7 +105,7 @@ public class ResourceManager {
 						throw new RuntimeException("Invalid mall file value.");
 					}
 
-					map.getPixel(j, i, pixel);
+					mapRaster.getPixel(j, i, pixel);
 
 					int hash = pixel[0] * 255 * 255 + pixel[1] * 255 + pixel[2];
 
@@ -122,7 +122,7 @@ public class ResourceManager {
 							break;
 
 						case MAP_SPAWNER:
-							MallFeature spawn = new Spawner(hash);
+							MallFeature spawn = new Spawner(hash, b);
 							features.put(hash, spawn);
 							grid[i][j].setFeature(spawn);
 							break;
@@ -145,12 +145,15 @@ public class ResourceManager {
 		Logger.log("Board randomized!");
 
 		Logger.log("Mall loaded!");
+
+		return mall;
 	}
 
-	public static void loadShoppingMall(String mallFile) {
+	public static Mall loadShoppingMall(String mallFile) {
+		Mall mall = new Mall();
 		BufferedImage mallImage = null;
 
-		Raster mall = null;
+		Raster mallRaster = null;
 
 		Cell[][] grid = null;
 
@@ -159,22 +162,19 @@ public class ResourceManager {
 
 		try {
 			mallImage = ImageIO.read(new File(mallFile));
-			mall = mallImage.getData();
+			mallRaster = mallImage.getData();
 
-			h = mall.getHeight();
-			w = mall.getWidth();
+			h = mallRaster.getHeight();
+			w = mallRaster.getWidth();
 
 			int[] pixel = new int[3];
 			grid = new Cell[h][w];
-
-			// Used to cache Attractors
-			HashMap<Integer, MallFeature> attractors = new HashMap<Integer, MallFeature>();
 
 			Logger.log("Creating board...");
 
 			for (int i = 0; i < h; ++i) {
 				for (int j = 0; j < w; ++j) {
-					mall.getPixel(j, i, pixel);
+					mallRaster.getPixel(j, i, pixel);
 
 					// [type][context data 0][contex data 1]
 					switch (pixel[0]) {
@@ -205,7 +205,7 @@ public class ResourceManager {
 		}
 
 		Board b = new Board(grid);
-		Mall.getInstance().setBoard(b);
+		mall.setBoard(b);
 
 		Logger.log("Board created!");
 
@@ -216,10 +216,8 @@ public class ResourceManager {
 		Logger.log("Board randomized!");
 
 		Logger.log("Mall loaded!");
-	}
 
-	public static Agent loadAgent(String agentFile) {
-		return new Agent(MovementBehavior.DYNAMIC);
+		return mall;
 	}
 
 	public static void randomize(Board b, int nAgents) {
@@ -231,7 +229,7 @@ public class ResourceManager {
 			if (b.getCell(p).isPassable()) {
 				MovementBehavior mb = MovementBehavior.values()[Rand
 						.nextInt(MovementBehavior.values().length)];
-				Misc.setAgent(new Agent(mb), p);
+				b.setAgent(new Agent(mb), p);
 			}
 		}
 

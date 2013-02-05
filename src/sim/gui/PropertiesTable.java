@@ -4,7 +4,6 @@ import java.util.Observable;
 import java.util.Observer;
 
 import javax.swing.JTable;
-import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 
 import sim.control.GuiState;

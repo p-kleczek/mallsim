@@ -5,7 +5,7 @@ import java.awt.Point;
 import java.util.Map;
 
 import sim.model.algo.Ped4;
-import sim.model.helpers.Misc;
+import sim.model.helpers.Direction;
 import sim.model.helpers.MyPoint;
 import sim.model.helpers.Vec;
 
@@ -30,7 +30,7 @@ public class Board {
 			for (int x = 0; x < getWidth(); x++) {
 				p.setLocation(x, y);
 				getCell(p).clearVisitsCounter();
-				Misc.setAgent(null, p);
+				setAgent(null, p);
 			}
 	}
 
@@ -148,4 +148,42 @@ public class Board {
 
 		return nAgents;
 	}
+
+	public void setAgent(Agent a, Point p) {
+		Cell c = getCell(p);
+
+		if (c.getAgent() != null)
+			modifyForceField(c.getAgent(), new MyPoint(p), -1);
+
+		getCell(p).setAgent(a);
+
+		if (a != null) {
+			a.setPosition(p);
+			modifyForceField(a, new MyPoint(p), 1);
+			getCell(p).incrementVisitsCounter();
+		}
+	}
+
+	/**
+	 * Zamienia miejscami agentów z płytek określonych przez przekazane jako
+	 * parametry współrzędne.
+	 * 
+	 * @param p1
+	 * @param p2
+	 */
+	public void swapAgent(Point p1, Point p2) {
+		Agent a1 = getCell(p1).getAgent();
+		Agent a2 = getCell(p2).getAgent();
+
+		setAgent(a1, p2);
+		setAgent(a2, p1);
+	}
+	
+	public void setDirection(Agent a, Direction direction) {
+		// XXX: uaktualnienie powinno następować po zmodyfikowaniu kierunku
+		modifyForceField(a, a.getPosition(), -1);
+		a.setDirection(direction);
+		modifyForceField(a, a.getPosition(), 1);
+	}
+	
 }

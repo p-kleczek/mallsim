@@ -15,9 +15,7 @@ import sim.control.GuiState;
 import sim.control.TacticalWorker;
 import sim.model.Agent;
 import sim.model.Agent.MovementBehavior;
-import sim.model.Board;
 import sim.model.Mall;
-import sim.model.helpers.Misc;
 import sim.model.helpers.Rand;
 import sim.util.AviRecorder;
 
@@ -33,15 +31,20 @@ public class Simulation extends Observable implements Runnable {
 	 */
 	private final int STEPS = 5000;
 
-	private Mall mall;
-	private Board board;
+	private Mall mall = new Mall();
 	private AviRecorder aviRecorder;
 
-	public Simulation(Mall mall, AviRecorder aviRecorder) {
+	public Simulation(AviRecorder aviRecorder) {
 		super();
-		this.mall = mall;
-		board = mall.getBoard();
 		this.aviRecorder = aviRecorder;
+	}
+
+	public Mall getMall() {
+		return mall;
+	}
+
+	public void setMall(Mall mall) {
+		this.mall = mall;
 	}
 
 	/**
@@ -55,10 +58,10 @@ public class Simulation extends Observable implements Runnable {
 		// Sprawdzanie, czy cel został osiągnięty.
 		Point curr = new Point();
 		Agent agent;
-		for (int y = 0; y < board.getHeight(); y++) {
-			for (int x = 0; x < board.getWidth(); x++) {
+		for (int y = 0; y < mall.getBoard().getHeight(); y++) {
+			for (int x = 0; x < mall.getBoard().getWidth(); x++) {
 				curr.setLocation(x, y);
-				agent = board.getCell(curr).getAgent();
+				agent = mall.getBoard().getCell(curr).getAgent();
 
 				if (agent == null)
 					continue;
@@ -95,18 +98,19 @@ public class Simulation extends Observable implements Runnable {
 	}
 
 	/**
-	 * Prepare all agents on the board for the next step.
+	 * Prepare all agents on the mall.getBoard() for the next step.
 	 */
 	private void prepareAgents() {
 		Point p = new Point();
-		for (int y = 0; y < board.getHeight(); y++) {
-			for (int x = 0; x < board.getWidth(); x++) {
+		for (int y = 0; y < mall.getBoard().getHeight(); y++) {
+			for (int x = 0; x < mall.getBoard().getWidth(); x++) {
 				p.setLocation(x, y);
-				Agent agent = board.getCell(p).getAgent();
+				Agent agent = mall.getBoard().getCell(p).getAgent();
 
 				if (agent != null && agent.getTargetCount() > 0) {
 					if (!agent.getTarget().equals(p))
-						board.getCell(p).getAlgorithm().prepare(agent);
+						mall.getBoard().getCell(p).getAlgorithm()
+								.prepare(mall.getBoard(), agent);
 				}
 
 			}
@@ -119,10 +123,10 @@ public class Simulation extends Observable implements Runnable {
 	private Map<Agent, Integer> computeMovementPointsLeft() {
 		Point p = new Point();
 		Map<Agent, Integer> speedPointsLeft = new WeakHashMap<Agent, Integer>();
-		for (int y = 0; y < board.getHeight(); y++) {
-			for (int x = 0; x < board.getWidth(); x++) {
+		for (int y = 0; y < mall.getBoard().getHeight(); y++) {
+			for (int x = 0; x < mall.getBoard().getWidth(); x++) {
 				p.setLocation(x, y);
-				Agent agent = board.getCell(p).getAgent();
+				Agent agent = mall.getBoard().getCell(p).getAgent();
 
 				if (agent != null)
 					speedPointsLeft.put(agent, agent.getvMax());
@@ -138,10 +142,10 @@ public class Simulation extends Observable implements Runnable {
 
 		for (int step = 0; step < Agent.V_MAX; step++) {
 			moved.clear();
-			for (int y = 0; y < board.getHeight(); y++) {
-				for (int x = 0; x < board.getWidth(); x++) {
+			for (int y = 0; y < mall.getBoard().getHeight(); y++) {
+				for (int x = 0; x < mall.getBoard().getWidth(); x++) {
 					p.setLocation(x, y);
-					Agent a = board.getCell(p).getAgent();
+					Agent a = mall.getBoard().getCell(p).getAgent();
 
 					if (a == null || moved.contains(a))
 						continue;
@@ -163,9 +167,12 @@ public class Simulation extends Observable implements Runnable {
 						// równomierny rozkład wykonanych kroków w
 						// czasie)
 
-						board.getCell(p).getAlgorithm()
-								.nextIterationStep(a, speedPointsLeft);
-						board.getCell(a.getPosition()).getFeature()
+						mall.getBoard()
+								.getCell(p)
+								.getAlgorithm()
+								.nextIterationStep(mall.getBoard(), a,
+										speedPointsLeft);
+						mall.getBoard().getCell(a.getPosition()).getFeature()
 								.performAction(a);
 
 						speedPointsLeft.put(a, speedPointsLeft.get(a) - 1);
@@ -186,15 +193,15 @@ public class Simulation extends Observable implements Runnable {
 		int nAgentSuccesses = 0;
 
 		Point p = new Point();
-		for (int y = 0; y < board.getHeight(); y++)
-			for (int x = 0; x < board.getWidth(); x++) {
+		for (int y = 0; y < mall.getBoard().getHeight(); y++)
+			for (int x = 0; x < mall.getBoard().getWidth(); x++) {
 				p.setLocation(x, y);
-				board.getCell(p).clearVisitsCounter();
+				mall.getBoard().getCell(p).clearVisitsCounter();
 			}
 
-		computePaths(board);
+		computePaths();
 
-		int nAgentsBegin = board.countAgents();
+		int nAgentsBegin = mall.getBoard().countAgents();
 		nTotalAgents += nAgentsBegin;
 
 		// Ilość agentów, którzy osiągnęli swój cel.
@@ -229,25 +236,27 @@ public class Simulation extends Observable implements Runnable {
 						/ nTotalAgents));
 	}
 
-	private void computePaths(Board board) {
+	private void computePaths() {
 		BlockingQueue<Agent> agentsToCompute = new LinkedBlockingQueue<>(5);
 		List<TacticalWorker> threads = new ArrayList<>(NUM_TACTICAL_THREADS);
 
 		for (int i = 0; i < NUM_TACTICAL_THREADS; i++) {
-			TacticalWorker t = new TacticalWorker(agentsToCompute, board);
+			TacticalWorker t = new TacticalWorker(agentsToCompute,
+					mall.getBoard());
 			threads.add(t);
 			t.start();
 		}
 
-		if (board.countAgents() == 0) {
-			Misc.setAgent(new Agent(MovementBehavior.DYNAMIC), new Point(2, 2));
+		if (mall.getBoard().countAgents() == 0) {
+			mall.getBoard().setAgent(new Agent(MovementBehavior.DYNAMIC),
+					new Point(2, 2));
 		}
 
 		Point p = new Point();
-		for (int y = 0; y < board.getHeight(); y++) {
-			for (int x = 0; x < board.getWidth(); x++) {
+		for (int y = 0; y < mall.getBoard().getHeight(); y++) {
+			for (int x = 0; x < mall.getBoard().getWidth(); x++) {
 				p.setLocation(x, y);
-				Agent a = board.getCell(p).getAgent();
+				Agent a = mall.getBoard().getCell(p).getAgent();
 				if (a != null) {
 					try {
 						agentsToCompute.put(a);

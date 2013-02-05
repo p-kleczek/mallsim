@@ -90,7 +90,6 @@ public class Cell {
         this.forceValue += forceValue;
     }
 
-    // XXX: debug
     public void setAlgorithm(MovementAlgorithm algorithm) {
         this.algorithm = algorithm;
     }

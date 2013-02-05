@@ -3,6 +3,7 @@ package sim.model.algo;
 import java.util.Map;
 
 import sim.model.Agent;
+import sim.model.Board;
 
 /*
  * FIXME: problem, gdy dwóch agentów ma dokładnie tą samą płytkę-cel (jeden krąży wokół pola)
@@ -10,34 +11,32 @@ import sim.model.Agent;
  */
 public interface MovementAlgorithm {
 
-    public static enum Algorithm {
-        NONE, PED_4, SOCIAL_FORCE
-    }
+	public static enum Algorithm {
+		NONE, PED_4, SOCIAL_FORCE
+	}
 
-    enum Orientation {
-        SAME, OPP, ORTHO, OUT
-    }
+	enum Orientation {
+		SAME, OPP, ORTHO, OUT
+	}
 
+	/**
+	 * 
+	 * @param board
+	 *            plansza
+	 * @param a
+	 *            agent, dla którego wykonujemy algorytm
+	 */
+	public void prepare(Board b, Agent a);
 
-    /**
-     * 
-     * @param board
-     *            plansza
-     * @param a
-     *            agent, dla którego wykonujemy algorytm
-     */
-    public void prepare(Agent a);
-
-
-    /**
-     * 
-     * @param board
-     *            plansza
-     * @param p
-     *            punkt na planszy, dla którego wykonujemy algorytm
-     * @param mpLeft
-     *            mapa określająca ilość jeszcze niewykorzystanych punktów ruchu
-     *            agentów
-     */
-    public void nextIterationStep(Agent a, Map<Agent, Integer> mpLeft);
+	/**
+	 * 
+	 * @param board
+	 *            plansza
+	 * @param p
+	 *            punkt na planszy, dla którego wykonujemy algorytm
+	 * @param mpLeft
+	 *            mapa określająca ilość jeszcze niewykorzystanych punktów ruchu
+	 *            agentów
+	 */
+	public void nextIterationStep(Board b, Agent a, Map<Agent, Integer> mpLeft);
 }

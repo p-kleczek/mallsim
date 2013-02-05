@@ -3,6 +3,7 @@ package sim.model.algo;
 import java.util.Map;
 
 import sim.model.Agent;
+import sim.model.Board;
 
 public class Empty implements MovementAlgorithm {
 
@@ -16,11 +17,11 @@ public class Empty implements MovementAlgorithm {
 	}
 
 	@Override
-	public void prepare(Agent a) {
+	public void prepare(Board b, Agent a) {
 	}
 
 	@Override
-	public void nextIterationStep(Agent a, Map<Agent, Integer> mpLeft) {
+	public void nextIterationStep(Board b, Agent a, Map<Agent, Integer> mpLeft) {
 	}
 
 }

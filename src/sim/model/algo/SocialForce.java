@@ -9,9 +9,7 @@ import java.util.Map;
 
 import sim.model.Agent;
 import sim.model.Board;
-import sim.model.Mall;
 import sim.model.helpers.Direction;
-import sim.model.helpers.Misc;
 import sim.model.helpers.MyPoint;
 import sim.model.helpers.Rand;
 
@@ -42,26 +40,25 @@ public class SocialForce implements MovementAlgorithm {
 	}
 
 	@Override
-	public void prepare(Agent a) {
+	public void prepare(Board b, Agent a) {
 		// Social Force nie potrzebuje fazy wstępnej.
 		return;
 	}
 
 	@Override
-	public void nextIterationStep(Agent a, Map<Agent, Integer> mpLeft) {
+	public void nextIterationStep(Board b, Agent a, Map<Agent, Integer> mpLeft) {
 		final double EXCHANGE_CHANCE = 0.5;
-		Board board = Mall.getInstance().getBoard();
 
-		Point hpt = getHighestPotentialTile(board, a.getPosition());
+		Point hpt = getHighestPotentialTile(b, a.getPosition());
 
 		// Brak możliwości ruchu - agent "drepcze" w miejscu.
-		if (hpt == null || hpt != null && board.getCell(hpt).getAgent() != null
+		if (hpt == null || hpt != null && b.getCell(hpt).getAgent() != null
 				&& Math.random() < EXCHANGE_CHANCE) {
-			a.setDirection(a.getDirection().nextCW());
+			b.setDirection(a, a.getDirection().nextCW());
 		} else {
 			MyPoint p = a.getPosition();
-			Misc.swapAgent(p, hpt);
-			adjustDirection(a, p);
+			b.swapAgent(p, hpt);
+			adjustDirection(b, a, p);
 			a.incrementFieldsMoved();
 		}
 	}
@@ -72,20 +69,20 @@ public class SocialForce implements MovementAlgorithm {
 	 * @param a
 	 * @param prev
 	 */
-	private void adjustDirection(Agent a, Point prev) {
+	private void adjustDirection(Board b, Agent a, Point prev) {
 		if (a.getDirection() == Direction.N || a.getDirection() == Direction.S) {
 			if (a.getPosition().y == prev.y) {
 				if (a.getPosition().x < prev.x)
-					a.setDirection(Direction.W);
+					b.setDirection(a, Direction.W);
 				else
-					a.setDirection(Direction.E);
+					b.setDirection(a, Direction.E);
 			}
 		} else {
 			if (a.getPosition().x == prev.x) {
 				if (a.getPosition().y < prev.y)
-					a.setDirection(Direction.N);
+					b.setDirection(a, Direction.N);
 				else
-					a.setDirection(Direction.S);
+					b.setDirection(a, Direction.S);
 			}
 		}
 	}

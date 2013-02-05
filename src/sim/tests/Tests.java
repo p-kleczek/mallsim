@@ -1,25 +1,12 @@
 package sim.tests;
 
-import java.awt.Dimension;
-import java.awt.Point;
-
-import sim.model.Agent;
-import sim.model.Board;
-import sim.model.Cell;
-import sim.model.Agent.MovementBehavior;
-import sim.model.algo.Ped4;
-import sim.model.algo.SocialForce;
-import sim.model.algo.Tactical;
-import sim.model.helpers.Direction;
-import sim.model.helpers.Misc;
-import sim.model.helpers.Rand;
 
 public class Tests {
-	public static void testSocialForce(Board b) {
+/*	public static void testSocialForce(Board b) {
 		for (int y = 0; y < b.getHeight(); y++)
 			for (int x = 0; x < b.getWidth(); x++) {
 				Point p = new Point(x, y);
-				Misc.setAgent(null, p);
+				b.setAgent(null, p);
 				b.getCell(p).setAlgorithm(SocialForce.getInstance());
 			}
 
@@ -38,19 +25,19 @@ public class Tests {
 			a1.addTarget(new Point(3, 6));
 			a1.setInitialDistanceToTarget(new Point(5, 6).distance(new Point(3,
 					6)));
-			Misc.setAgent(a1, new Point(5, 6));
+			b.setAgent(a1, new Point(5, 6));
 		} else if (mode == WALK_AROUND) {
 			Agent a1 = new Agent(MovementBehavior.DYNAMIC);
 			a1.addTarget(new Point(12, 3));
 			a1.setInitialDistanceToTarget(new Point(2, 6).distance(new Point(
 					12, 3)));
-			Misc.setAgent(a1, new Point(2, 6));
+			b.setAgent(a1, new Point(2, 6));
 
 			Agent a2 = new Agent(MovementBehavior.DYNAMIC);
 			a2.addTarget(new Point(7, 5));
 			a2.setInitialDistanceToTarget(new Point(7, 5).distance(new Point(7,
 					5)));
-			Misc.setAgent(a2, new Point(7, 5));
+			b.setAgent(a2, new Point(7, 5));
 		}
 	}
 
@@ -69,7 +56,7 @@ public class Tests {
 				a.setInitialDistanceToTarget(p.distance(a.getTarget()));
 				a.setDirection(Direction.values()[Rand.nextInt(Direction
 						.values().length)]);
-				Misc.setAgent(a, p);
+				b.setAgent(a, p);
 			}
 		}
 	}
@@ -78,7 +65,7 @@ public class Tests {
 		for (int y = 0; y < b.getHeight(); y++)
 			for (int x = 0; x < b.getWidth(); x++) {
 				Point p = new Point(x, y);
-				Misc.setAgent(null, p);
+				b.setAgent(null, p);
 				b.getCell(p).setAlgorithm(Ped4.getInstance());
 			}
 
@@ -89,7 +76,7 @@ public class Tests {
 	public static void testPed4Individual(Board b) {
 		for (int y = 0; y < b.getHeight(); y++)
 			for (int x = 0; x < b.getWidth(); x++)
-				Misc.setAgent(null, new Point(x, y));
+				b.setAgent(null, new Point(x, y));
 
 		for (int y = 3; y < 8; y++)
 			for (int x = 5; x < 10; x++)
@@ -100,7 +87,7 @@ public class Tests {
 		a.addTarget(new Point(8, 5));
 		a.setInitialDistanceToTarget(new Point(0, 0).distance(new Point(8, 5)));
 		a.addTarget(new Point(4, 1));
-		Misc.setAgent(a, new Point(0, 0));
+		b.setAgent(a, new Point(0, 0));
 	}
 
 	public static void testPed4Massive(Board b) {
@@ -117,9 +104,9 @@ public class Tests {
 				a.setInitialDistanceToTarget(p.distance(a.getTarget()));
 				a.setDirection(Direction.values()[Rand.nextInt(Direction
 						.values().length)]);
-				Misc.setAgent(a, p);
+				b.setAgent(a, p);
 			}
 		}
 	}
-
+*/
 }
