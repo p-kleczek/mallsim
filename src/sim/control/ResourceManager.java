@@ -30,11 +30,18 @@ public class ResourceManager {
 	public static final int MAP_ATTRACTOR = 0x7F;
 	public static final int MAP_SPAWNER = 0xFF;
 
+	public static final String MAPS_FOLDER_PATH = "./data/malls/";
+
 	/**
 	 * Loads shopping mall data from an image file.
+	 * 
+	 * @param mallName
+	 *            name of a map to be loaded
 	 */
+	public static Mall loadShoppingMall(String mapName) {
+		String mallFile = MAPS_FOLDER_PATH + mapName + "_map.bmp";
+		String featureMap = MAPS_FOLDER_PATH + mapName + "_feat.bmp";
 
-	public static Mall loadShoppingMall(String mallFile, String featureMap) {
 		Mall mall = new Mall();
 
 		Logger.log("Loading mall: " + mallFile + " with featuremap: "
@@ -141,77 +148,6 @@ public class ResourceManager {
 		Logger.log("Randomizing board...");
 
 		randomize(b, h * w / 250);
-
-		Logger.log("Board randomized!");
-
-		Logger.log("Mall loaded!");
-
-		return mall;
-	}
-
-	public static Mall loadShoppingMall(String mallFile) {
-		Mall mall = new Mall();
-		BufferedImage mallImage = null;
-
-		Raster mallRaster = null;
-
-		Cell[][] grid = null;
-
-		int h = 0;
-		int w = 0;
-
-		try {
-			mallImage = ImageIO.read(new File(mallFile));
-			mallRaster = mallImage.getData();
-
-			h = mallRaster.getHeight();
-			w = mallRaster.getWidth();
-
-			int[] pixel = new int[3];
-			grid = new Cell[h][w];
-
-			Logger.log("Creating board...");
-
-			for (int i = 0; i < h; ++i) {
-				for (int j = 0; j < w; ++j) {
-					mallRaster.getPixel(j, i, pixel);
-
-					// [type][context data 0][contex data 1]
-					switch (pixel[0]) {
-					case MALL_WALL:
-						grid[i][j] = Cell.WALL;
-						continue; // Skips also the feature map dispatch.
-
-					case MALL_PED4:
-						grid[i][j] = new Cell(Cell.Type.PASSABLE,
-								Ped4.getInstance());
-						break;
-
-					case MALL_SOCIAL_FORCE:
-						grid[i][j] = new Cell(Cell.Type.PASSABLE,
-								SocialForce.getInstance());
-						break;
-
-					default:
-						grid[i][j] = new Cell(Cell.Type.PASSABLE,
-								Ped4.getInstance());
-						// default: throw new
-						// RuntimeException("Invalid mall file value.");
-					}
-				}
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
-		Board b = new Board(grid);
-		mall.setBoard(b);
-
-		Logger.log("Board created!");
-
-		Logger.log("Randomizing board...");
-
-		randomize(b, h * w / 25);
 
 		Logger.log("Board randomized!");
 

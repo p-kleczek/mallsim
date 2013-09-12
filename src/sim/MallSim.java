@@ -43,8 +43,7 @@ public class MallSim {
 
 	private static void prepare() {
 		simulation = new Simulation(aviRecorder);
-		Mall mall = ResourceManager.loadShoppingMall("./data/malls/gk0.bmp",
-				"./data/malls/gk0map.bmp");
+		Mall mall = ResourceManager.loadShoppingMall("ped4-test");
 		simulation.setMall(mall);
 
 		frame = new MallFrame(simulation.getMall(), aviRecorder);

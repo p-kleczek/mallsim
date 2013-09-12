@@ -13,3 +13,4 @@ docs/*.aux
 docs/*.lof
 docs/html
 /out.avi
+/bin
