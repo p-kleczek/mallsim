@@ -18,7 +18,7 @@ public class GuiState {
     public static DrawTargetLinePolicy targetLinePolicy = DrawTargetLinePolicy.NONE;
     public static BackgroundPolicy backgroundPolicy = BackgroundPolicy.NONE;
 
-    public static int animationSpeed = 300;
+    public static int animationSpeed = 50;
     
     public static Agent getSelectedAgent() {
         return selectedAgent;

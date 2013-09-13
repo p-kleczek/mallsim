@@ -2,6 +2,8 @@ package sim.model;
 
 import java.awt.Dimension;
 import java.awt.Point;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import sim.model.algo.Ped4;
@@ -12,6 +14,13 @@ import sim.model.helpers.Vec;
 public class Board {
 
 	private Cell[][] grid;
+
+	private int accessibleFieldCount;
+	
+	/**
+	 * Komórki, w których występują Spawnery.
+	 */
+	private List<Point> ioPoints = new ArrayList<>();
 
 	public Board(Dimension dimension) {
 		grid = new Cell[dimension.height][dimension.width];
@@ -178,12 +187,28 @@ public class Board {
 		setAgent(a1, p2);
 		setAgent(a2, p1);
 	}
-	
+
 	public void setDirection(Agent a, Direction direction) {
 		// XXX: uaktualnienie powinno następować po zmodyfikowaniu kierunku
 		modifyForceField(a, a.getPosition(), -1);
 		a.setDirection(direction);
 		modifyForceField(a, a.getPosition(), 1);
 	}
-	
+
+	public int getAccessibleFieldCount() {
+		return accessibleFieldCount;
+	}
+
+	public void setAccessibleFieldCount(int n) {
+		accessibleFieldCount = n;
+	}
+
+	public List<Point> getIoPoints() {
+		return ioPoints;
+	}
+
+	public void setIoPoints(List<Point> ioPoints) {
+		this.ioPoints = ioPoints;
+	}
+
 }

@@ -56,7 +56,6 @@ public class MallSim {
 	public static void runSimulation() {
 		simulation.addObserver(frame.getBoard());
 		Board b = simulation.getMall().getBoard();
-		ResourceManager.randomize(b, b.getHeight() * b.getWidth() / 50);
 
 		if (simThread != null)
 			simThread.stop();

@@ -5,7 +5,9 @@ import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import javax.imageio.ImageIO;
 
@@ -88,6 +90,11 @@ public class ResourceManager {
 
 			Logger.log("Creating board...");
 
+
+			int accessibleFieldsCounter = 0;
+			List<Point> ioPoints = new ArrayList<>();
+			Point p = new Point();
+
 			for (int i = 0; i < h; ++i) {
 				for (int j = 0; j < w; ++j) {
 					mallRaster.getPixel(j, i, pixel);
@@ -114,6 +121,7 @@ public class ResourceManager {
 
 					mapRaster.getPixel(j, i, pixel);
 
+					// TODO: bit-shift + OR
 					int hash = pixel[0] * 255 * 255 + pixel[1] * 255 + pixel[2];
 
 					// [type][context data 0][contex data 1]
@@ -137,8 +145,19 @@ public class ResourceManager {
 							break;
 						}
 					}
+					
+					if (grid[i][j].isPassable())
+						accessibleFieldsCounter++;
+					
+					p.setLocation(j, i);
+					if (grid[i][j].getFeature() instanceof Spawner)
+						ioPoints.add(new Point(j, i));
 				}
 			}
+			
+			mall.getBoard().setAccessibleFieldCount(accessibleFieldsCounter);
+			mall.getBoard().setIoPoints(ioPoints);
+			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

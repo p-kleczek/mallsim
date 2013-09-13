@@ -2,6 +2,7 @@ package sim;
 
 import java.awt.Point;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -12,10 +13,13 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import sim.control.GuiState;
+import sim.control.ResourceManager;
 import sim.control.TacticalWorker;
 import sim.model.Agent;
 import sim.model.Agent.MovementBehavior;
+import sim.model.Board;
 import sim.model.Mall;
+import sim.model.algo.Spawner;
 import sim.model.helpers.Rand;
 import sim.util.AviRecorder;
 
@@ -31,8 +35,26 @@ public class Simulation extends Observable implements Runnable {
 	 */
 	private final int STEPS = 5000;
 
+	/**
+	 * Interval (= number of simulation steps) between appearance of a next
+	 * agent.
+	 */
+	private int AGENT_GENERATION_INTERVAL = 2;
+
+	/**
+	 * Maximal number of people in a mall as a percentage of accessible area.
+	 */
+	private double MAX_CROWD_FACTOR = 0.15;
+
 	private Mall mall = new Mall();
 	private AviRecorder aviRecorder;
+
+	private int stepCounter = 0;
+
+	/**
+	 * Index of the last step when an agent has been generated.
+	 */
+	private int lastGenerationStep = 0;
 
 	public Simulation(AviRecorder aviRecorder) {
 		super();
@@ -188,6 +210,7 @@ public class Simulation extends Observable implements Runnable {
 	@Override
 	public void run() {
 		int nTotalAgents = 0;
+		Board board = mall.getBoard();
 
 		// Number of agents who successfully reached their final destination.
 		int nAgentSuccesses = 0;
@@ -199,6 +222,9 @@ public class Simulation extends Observable implements Runnable {
 				mall.getBoard().getCell(p).clearVisitsCounter();
 			}
 
+		// ResourceManager.randomize(board, board.getHeight() * board.getWidth()
+		// / 50);
+		// XXX: ta metoda najprawdopodobniej musi zostać zmodyfikowana
 		computePaths();
 
 		int nAgentsBegin = mall.getBoard().countAgents();
@@ -207,15 +233,18 @@ public class Simulation extends Observable implements Runnable {
 		// Ilość agentów, którzy osiągnęli swój cel.
 		int targetsReached = 0;
 
-		for (int i = 0; i < STEPS; i++) {
-			if (i % aviRecorder.getSimFramesPerAviFrame() == 0)
+		for (stepCounter = 0; stepCounter < STEPS; stepCounter++) {
+			if (stepCounter % aviRecorder.getSimFramesPerAviFrame() == 0)
 				aviRecorder.recordFrame();
+
+			generateAgent();
 
 			targetsReached = computeTargetReached();
 
 			if (targetsReached == nAgentsBegin) {
-				nAgentSuccesses += nAgentsBegin;
-				break;
+				// nAgentSuccesses += nAgentsBegin;
+				// XXX: poniższy warunek został okomentowany na potrzeny testów
+				// break;
 			}
 
 			try {
@@ -227,6 +256,8 @@ public class Simulation extends Observable implements Runnable {
 
 			Map<Agent, Integer> speedPointsLeft = computeMovementPointsLeft();
 			moveAgents(speedPointsLeft);
+			
+			clearAgentsOnExits();
 		}
 
 		nAgentSuccesses += targetsReached;
@@ -234,6 +265,18 @@ public class Simulation extends Observable implements Runnable {
 		System.out.println(String.format("Sukcesy agentów:\t %d / %d\t (%d%%)",
 				nAgentSuccesses, nTotalAgents, nAgentSuccesses * 100
 						/ nTotalAgents));
+	}
+	
+	private void clearAgentsOnExits() {
+		Board board = mall.getBoard();
+		Point p = new Point();
+		for (int x = 0; x < board.getWidth(); x++) {
+			for (int y = 0; y < board.getHeight(); y++) {
+				p.setLocation(x, y);
+				if (board.getCell(p).getFeature() instanceof Spawner && board.getCell(p).getAgent() != null)
+					board.getCell(p).setAgent(null);
+			}
+		}
 	}
 
 	private void computePaths() {
@@ -270,5 +313,47 @@ public class Simulation extends Observable implements Runnable {
 		for (TacticalWorker t : threads) {
 			t.setStopped();
 		}
+	}
+
+	private void computePaths(Agent agent) {
+		BlockingQueue<Agent> agentsToCompute = new LinkedBlockingQueue<>(2);
+		try {
+			agentsToCompute.put(agent);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
+		TacticalWorker t = new TacticalWorker(agentsToCompute, mall.getBoard());
+		t.start();
+		t.setStopped();
+	}
+
+	private void generateAgent() {
+		Board board = mall.getBoard();
+
+		boolean isTooEarly = stepCounter - lastGenerationStep < AGENT_GENERATION_INTERVAL;
+		boolean isTooCrowdy = board.countAgents()
+				/ (double) board.getAccessibleFieldCount() >= MAX_CROWD_FACTOR;
+				
+		if (isTooEarly || isTooCrowdy)
+			return;
+
+		List<Point> ioPoints = board.getIoPoints();
+
+		// Select an empty field.
+		Collections.shuffle(ioPoints);
+		for (Point p : ioPoints) {
+			if (board.getCell(p).getAgent() == null) {
+				Agent agent = new Agent(MovementBehavior.AVERAGE);
+				board.setAgent(agent, p);
+				computePaths(agent);
+				
+				// TODO: wyznaczyć zachowanie agenta
+
+				break;
+			}
+		}
+
+		lastGenerationStep = stepCounter;
 	}
 }

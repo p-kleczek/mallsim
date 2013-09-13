@@ -21,24 +21,25 @@ public class TacticalWorker extends Thread {
 	@Override
 	public void run() {
 		while (true) {
-			synchronized (this) {
-				if (isStopped)
-					break;
-			}
-
 			Agent a = null;
 			try {
 				a = queue.take();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-			
+
 			System.out.println(this.getId() + "  [" + queue.size() + "]");
-			
+
 			if (a != null) {
 				a.clearTargets();
 				Tactical.initializeTargets(board, a, true);
 			}
+
+			synchronized (this) {
+				if (isStopped)
+					break;
+			}
+
 		}
 	}
 

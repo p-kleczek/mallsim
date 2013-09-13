@@ -289,7 +289,7 @@ public class MallFrame extends JFrame {
 		sldSimulationSpeed.setMinimum(50);
 		speedPanel.add(sldSimulationSpeed);
 		sldSimulationSpeed.setName("Simulation speed");
-		sldSimulationSpeed.setValue(300);
+		sldSimulationSpeed.setValue(100);
 
 		JToggleButton tglbtnPause = new JToggleButton("Pause");
 		tglbtnPause.addActionListener(new ActionListener() {
