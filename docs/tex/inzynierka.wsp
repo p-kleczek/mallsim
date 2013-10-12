@@ -1,0 +1,11 @@
+[main]
+.\main.tex
+
+[texfiles]
+.\impl.tex
+.\intro.tex
+.\model_mall.tex
+.\model_move.tex
+.\sim.tex
+.\bib.bib
+

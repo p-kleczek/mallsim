@@ -1,0 +1,178 @@
+\newpage
+    \section{Symulacja i analiza wyników}
+    \label{sec:sim}
+
+    W celu przetestowania poprawnoœci modelu i dzia³ania programu zdecydowano siê przeprowadziæ symulacjê lokalnego centrum handlowego - \href{http://www.galeria-krakowska.pl/}{\emph{Galerii Krakowskiej}}. Przygotowano mapy parteru centrum zaprezentowane na poni¿szej ilustracji:
+
+    \begin{figure}[H]
+      \centering
+      \includegraphics[scale=0.5]{./img/GaleriaKrakowska.pdf}
+      \caption{Mapy parteru popularnej \emph{Galerii Krakowskiej}.}
+      \label{fig:gk-maps}
+    \end{figure}
+
+    \noindent
+    Ze wzglêdu na brak dostêpu do danych i dynamiczne zmiany faktycznych rozk³adów sklepowych pó³ek i alejek mapy parteru symulowanego centrum handlowego, przedstawione na rysunku \ref{fig:gk-maps}, zawieraj¹ przyk³adowe, proste uk³ady pó³ek sklepowych - wizjê autorów projektu. \\
+
+        \subsection{Kalibracja i walidacja parametrów symulacji}
+        \label{sec:calibration}
+
+        W celu kalibracji i walidacji parametrów modelu pos³u¿ono siê obserwacjami przeprowadzonymi w symulowanym centrum handlowym w wolnym czasie. W zwi¹zku z faktem, i¿ model zastosowany w tej pracy niewiele parametrów wymagaj¹cych kalibracji, z których wiêkszoœæ jest trudna, b¹dŸ niemo¿liwa do oszacowania bez du¿ej porcji danych statystycznych kalibracjê przeprowadzono w du¿ej mierze ``metod¹ prób i b³êdów'' w oparciu o dane zebrane z obserwacji. Uda³o siê w ten sposób zidentyfikowaæ trzy typy agentów odwiedzaj¹cych centrum handlowe (dynamiczny, przeciêtny i ``pensjonariusz''), które ró¿ni¹ siê maksymaln¹ prêdkoœci¹ poruszania, chêci¹ do omijania innych agentów, czy wytrwa³oœci¹ w robieniu zakupów. \\
+
+        Po skalibrowaniu parametrów dotycz¹cych zachowania agentów przyst¹piono do kalibracji parametrów centrum handlowego, wyra¿onych w wiêkszoœci przez \hyperref[fig:mall-features]{mapê rozk³adu stref specjalnych} centrum handlowego, która jest wykorzystywana przez algorytm wyszukiwania œcie¿ek. Kalibracja przebiega³a ze wzglêdu na dwa kluczowe aspekty symulacji - czas generowania œcie¿ek oraz zachodzenie abstrakcyjnych zjawisk opisanych w nastêpnej sekcji. Kalibracjê ponownie przeprowadzono w oparciu o dane pochodz¹ce z w³asnych obserwacji i ``zrdrowego rozs¹dku'', niestety administracja \emph{Galerii Krakowskiej} nie udzieli³a autorom pracy dostêpu do istotnych danych, które umo¿liwi³yby stworzenie lepszej mapy rozk³adu stref specjalnych, która dok³adniej oddawa³aby rzeczywisty charakter \emph{Galerii Krakowskiej}. \\
+
+        Walidacjê opracowanych parametrów przeprowadzono konfrontuj¹c wyniki symulacji z rzeczywistymi doœwiadczeniami wyniesionymi z symulowanego centrum handlowego. Porównanie wyników symulacji do poczynionych obserwacji rzeczywistego zachowania ludzi zawarto w nastêpnych sekcjach.
+
+        \subsection{Uzyskane wyniki iloœciowe i jakoœciowe}
+        \label{sec:results}
+
+        Uzyskane wyniki spe³niaj¹ wszystkie za³o¿enia postawione w sekcjach \ref{sec:mall-model} i \ref{sec:move-model} i s¹ bardzo zbli¿one do rzeczywistych zachowañ ludzi w centrum handlowym. Agenci poruszaj¹ siê zgodnie z wytyczonymi œcie¿kami, które dobierane s¹ w taki sposób, by dany agent odwiedzi³ wiele sklepów w centrum handlowym:
+
+        \begin{figure}[H]
+          \centering
+          \includegraphics[scale=0.7]{./img/route.png}
+          \caption{Wybrana przez algorytm œcie¿ka prowadz¹ca agenta po centrum handlowym.}
+          \label{fig:res-route}
+        \end{figure}
+
+\noindent
+Modeluje to strategiczne plany ludzi, którzy odwiedzaj¹c centrum handlowe przewa¿nie planuj¹ spêdziæ tam wiêcej czasu. Opisany w sekcji \ref{sec:path-finding} algorytm wyboru œcie¿ek prowadzi do powstania realistycznego routingu ludzi w centrum handlowym:
+
+        \begin{figure}[H]
+          \centering
+          \includegraphics[scale=0.7]{./img/routing.png}
+          \caption{Realistyczny routing agentów w centrum handlowym.}
+          \label{fig:res-routing}
+        \end{figure}
+
+\noindent
+Spontanicznie tworz¹ siê pasy ruchu, którymi ludzie pod¹¿aj¹ do celu swojej podró¿y:
+
+        \begin{figure}[H]
+          \centering
+          \includegraphics[scale=0.7]{./img/lanes.png}
+          \caption{Samoistne tworzenie siê pasów ruchu.}
+          \label{fig:res-lanes}
+        \end{figure}
+
+\noindent
+Zupe³nie jak w prawdziwym centrum handlowym, agenci preferuj¹ poruszanie siê œrodkiem korytarza w miarê mo¿liwoœci, o czym œwiadczy wiêksza wartoœæ ``temperatury'' na œrodku poni¿szej ilustracji:
+
+        \begin{figure}[H]
+          \centering
+          \includegraphics[scale=0.7]{./img/middle.png}
+          \caption{Agenci preferuj¹cy œrodek korytarza.}
+          \label{fig:res-middle}
+        \end{figure}
+
+\noindent
+Takie zachowanie prowadzi do tworzenia siê skupisk ludzi (\emph{ang. flocking}), co wp³ywa na preferencje odleg³oœciowe zaanga¿owanych agentów i zmianê ich gradientów \emph{Social Force}. Zmiana ta poci¹ga za sob¹ roz³adowanie zatoru - model osi¹ga stabilnoœæ automatycznie siê reguluj¹c:
+
+        \begin{figure}[H]
+          \centering
+          \includegraphics[scale=0.7]{./img/bottleneck.png}
+          \caption{Samoistne tworzenie siê zgrupowañ ludzi - \emph{flocking}.}
+          \label{fig:res-bottleneck}
+        \end{figure}
+
+Równie interesuj¹ce jest powstawanie abstrakcyjnych zachowañ wymienionych w sekcji \ref{sec:mall-model}. Algorytm \hyperref[sec:tactical]{fazy taktycznej} uwzglêdnia \emph{atrakcjê} agentów do ró¿nych, interesuj¹cych stref centrum handlowego, co zaprezentowano na rysunku \ref{fig:res-attraction}.
+
+        \begin{figure}[H]
+          \centering
+          \includegraphics[scale=0.7]{./img/attraction.png}
+          \caption{Uwzglêdnianie miejsc przyci¹gaj¹cych uwagê w œcie¿ce agenta.}
+          \label{fig:res-attraction}
+        \end{figure}
+
+\noindent
+Obserwowaæ mo¿na naturalne zachowania, takie jak zatrzymanie siê przed oknem wystawowym, czêsto obserwowane w prawdziwych centrach handlowych:
+
+        \begin{figure}[H]
+          \centering
+          \includegraphics[scale=0.7]{./img/attraction2.png}
+          \caption{Charakterystyczne zboczenie z trasy celem osi¹gniêcia atraktora.}
+          \label{fig:res-attraction-2}
+        \end{figure}
+
+\noindent
+Agenci bardzo chêtnie grupuj¹ siê by obserwowaæ ró¿ne ciekawe zjawiska obecne w symulowanym centrum handlowym - wszystko dziêki umieszczonym tam \hyperref[sec:attractors]{atraktorom}:
+
+        \begin{figure}[H]
+          \centering
+          \includegraphics[scale=0.7]{./img/attraction3.png}
+          \caption{Agenci w obrêbie atraktora.}
+          \label{fig:res-attraction-3}
+        \end{figure}
+
+\hyperref[sec:queues]{Kolejki}, podobnie jak atraktory, brane s¹ pod uwagê ju¿ w fazie taktycznej dzia³ania algorytmu - agenci dokonuj¹cy zakupu podchodz¹ do kasy i oczekuj¹ na obs³ugê imituj¹c zachowanie prawdziwych ludzi:
+
+        \begin{figure}[H]
+          \centering
+          \includegraphics[scale=0.7]{./img/queueing.png}
+          \caption{Uwzglêdnianie sklepowych kas i kolejek w œcie¿ce agenta.}
+          \label{fig:res-queueing}
+        \end{figure}
+
+\noindent
+Zachowanie to uda³o siê osi¹gn¹æ pomimo dzia³ania algorytmu \hyperref[sec:operational]{Social Force}, który nakazuje agentom trzymanie dystansu do siebie nawzajem:
+
+        \begin{figure}[H]
+          \centering
+          \includegraphics[scale=0.7]{./img/queueing2.png}
+          \caption{Agenci oczekuj¹cy na swoj¹ kolej.}
+          \label{fig:res-queueing-2}
+        \end{figure}
+
+W podobny sposób osi¹gniêto \hyperref[sec:holders]{wstrzymanie agentów} - symuluj¹ce wszelkiego rodzaju odpoczynki i czasy oczekiwania zdarzaj¹ce siê w centrum handlowym:
+
+        \begin{figure}[H]
+          \centering
+          \includegraphics[scale=0.7]{./img/hold.png}
+          \caption{Agenci odpoczywaj¹cy na ³awce (w obrêbie opóŸniacza).}
+          \label{fig:res-hold}
+        \end{figure}
+
+Interesuj¹cym jest fakt, i¿ nawet pomimo zastosowania skomplikowanych algorytmów routingu i wyszukiwania œcie¿ek uda³o siê otrzymaæ niemal stu procentowe pokrycie centrum handlowego. Agenci bezproblemowo osi¹gaj¹ wszystkie jego pomieszczenia, co doskonale oddaje charakterystyki prawdziwego centrum handlowego i zachowanie ludzi tam obecnych.
+
+        \begin{figure}[H]
+          \centering
+          \includegraphics[scale=0.7]{./img/coverage.png}
+          \caption{Pokrycie centrum handlowego.}
+          \label{fig:res-coverage}
+        \end{figure}
+
+
+Dodatkowo do dokumentacji projektu za³¹czono kilka filmów pokazuj¹cych dzia³anie symulacji i powstawanie wy¿ej opisanych zachowañ:
+
+        \begin{itemize}
+          \item \textbf{overview.avi} - Prezentacja ró¿nych aspektów wizualizacji symulacji: zbli¿anie, oddalanie, przesuwanie planu galerii, rozk³ad pola potencja³u, mapa ``temperatury'' (licznik odwiedzin pól).
+
+          \item \textbf{movement.avi} - Przyk³ad formowania siê ``pasów ruchu'' na prostych odcinkach korytarza (górna czêœæ animacji) dziêki u¿yciu algorytmu Ped-4. Problemy ze wspó³istnieniem obok siebie algorytmów Ped-4 i Social Force (patrz: ruch agentów po wygiêtych w ³uch korytarzach) - piesi zawracaj¹ b¹dŸ ``krêc¹ siê w kó³ko'' powoduj¹c zator.
+
+          \item \textbf{queue\_attractor.avi} - Dzia³anie kolejek (po prawej stronie) oraz atraktorów (w œrodku i po lewej stronie) - agenci chêtnie zbli¿aj¹ do takich stref. Wejœcie na atraktor albo kolejkê powoduje wstrzymanie agenta na okreœlony czas.
+
+          \item \textbf{social\_force.avi} - Przyk³ad omijania innych klientów z uwzglêdnieniem stref komfortu dziêki zastosowaniu algorytmu Social Force.
+
+          \item \textbf{visits.avi} - Animacja pokazuj¹ca przep³w ludzi w galerii handlowej. WyraŸnie widaæ du¿y, skoncentrowany ruch po korytarzach oraz niewielki i rozproszony ruch po obszarach sklepów.
+
+          \item \textbf{wall\_error.avi} - Przyk³ad b³êdów wyznaczania œcie¿ki skutkuj¹cy niemo¿liwoœci¹ osi¹gniêcia wyznaczonego celu z powodu natrafienia na œcianê. Przyczyn¹ jest przedwczesne uznanie wczeœniejszego celu (le¿¹cego w tym przypadku na szczycie œciany) za osi¹gniêty oraz wyznaczenie kolejnego celu w miejscu niewidocznym z pozycji agenta w chwili uznania poprzednieg celu za osi¹gniêty.
+        \end{itemize}
+
+        \subsection{Wyniki symulacji a rzeczywistoœæ}
+        \label{sec:sim-vs-reality}
+Wyniki symulacji doœæ dobrze oddaj¹ charakter zjawisk obserwowanych w rzeczywistej galerii handlowej.
+
+W korytarzach obserwujemy formowanie siê ``pasów ruchu'' - ludzie staraj¹ siê iœæ jeden za drugim w kolumnie, próbuj¹ wyprzedzaæ siê tylko wtedy, gdy nie nadchodzi nikt z naprzeciwka. We wnêtrzach sklepów dzieje siê na odwrót - brak poœpiechu sprawia, ¿e klienci wiêksz¹ wagê przywi¹zuj¹ do nie naruszania swoich stref komfortu.
+
+Na podgl¹dzie odwiedzonych p³ytek widzimy, ¿e klienci preferuj¹ ruch œrodkiem korytarzy, jednak gdy zajdzie taka koniecznoœæ korzystaj¹ z ca³ej jego dostêpnej szerokoœci.
+
+W przypadku sklepów rozk³ad odwiedzanych miejsc jest znacznie bardziej równomierny, czego równie¿ mo¿na by³o oczekiwaæ - wewn¹trz sklepu (o ile nie jest to dyskont spo¿ywczy) klient porozgl¹da siê i zapoznaje z ofert¹ sklepu, a uwagê ró¿nych osób przyci¹gaj¹ ró¿ne produkty. Warto równie¿ zauwa¿yæ, ¿e w przypadku niewielkich sklepów (typu: 101 drobiazgów, Åšwiat Kawy i Herbaty) stosunkowo niewielu klientów wchodzi g³êbiej do œrodka - wiêkszoœæ po wejœciu rozgl¹da siê chwilê i wychodzi. Zachowanie takie jest czêsto obserwowane w galeriach handlowych.
+
+Analiza wyników symulacji wykaza³a równie¿ koniecznoœæ dalszej kalibracji (oraz ewentualnie czêœciowej zmiany metodologii) procesu wyznaczania œcie¿ek. Na chwilê obecn¹ nie uda³o siê w pe³ni wyeliminowaæ niekorzystnego zjawiska ``forsowania œciany'' przez agentów spowodowanego równoczesnym wyst¹pieniem dwóch zdarzeñ: przedwczesnym uznaniem celu za osi¹gniêty oraz wyznaczeniu kolejnego celu w miejscu niewidocznym z aktualnej pozycji agenta. Przyk³ad takiej sytuacji pokazano poni¿ej: jeœli agent uzna punkt $A$ za osi¹gniêty jeszcze przed ominiêciem œciany, wektor celu prow¹dz¹cy do punktu $B$ spowoduje ruch agenta wzd³ó¿ œciany i próbê jej póŸniejszego ``sforsowania''.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=0.7]{./img/wallsmasher.png}
+  \caption{Forsowanie œciany przez wybranego agenta.}
+  \label{fig:bug-wallsmasher}
+\end{figure}

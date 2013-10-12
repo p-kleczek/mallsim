@@ -1,0 +1,721 @@
+\documentclass[a4paper, 12pt]{article}
+\usepackage{fontspec}
+%\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage[margin=2cm]{geometry}
+\usepackage{amsmath}
+\usepackage[nottoc,numbib]{tocbibind}
+\usepackage{enumerate}
+\usepackage{indentfirst}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{amssymb,latexsym,stmaryrd,dsfont,amsthm, algorithmicx}
+\usepackage[polish]{babel}
+%\usepackage{polski}
+
+\newcommand{\image}[2]{
+\begin{center}
+\includegraphics[scale = #1]{#2}
+\end{center}
+}
+
+\newcommand{\capimage}[3]{
+\begin{center}
+\includegraphics[scale = #1]{#2}\\
+\small #3 \normalsize
+\end{center}
+}
+
+\title{\textbf{Symulacja ruchu ludzi w centrum handlowym}}
+\author{Pawe³ K³eczek \\ \emph{pkleczek@student.agh.edu.pl} \and Kajetan Rzepecki \\ \emph{kajetan.rzepecki+agh@gmail.com}}
+\date{\today}
+
+\begin{document}
+
+    \maketitle
+
+    \vfill
+    \begin{abstract}
+    % TODO Trzeba dodaæ coœ wiêcej IMO, na przyk³ad o tym, jak podejdziemy do problemu ruchu ludzi.
+
+\noindent
+Praca i zwi¹zany z ni¹ projekt dotycz¹ symulowania ruchu ludzi w centrum handlowym z wykorzystaniem modelu \emph{Social Distances} na dwuwymiarowej siatce.
+    \end{abstract}
+    \vfill
+
+    \thispagestyle{empty} % Nie chcemy numerowaæ pierwszej strony.
+
+\newpage
+    \setcounter{page}{1}
+    \setcounter{tocdepth}{3}
+
+    \tableofcontents
+
+\newpage
+    \section{Wprowadzenie}
+    \label{sec:intro}
+
+\noindent
+Celem wykonywanego projektu jest stworzenie modelu oraz symulacja ruchu ludzi w centrum handlowym w oparciu miêdzy innymi o model \emph{Social Distances} (\cite{refs:social-distances-1, refs:social-distances-2}).
+
+Modelowanie ruchu du¿ych grup ludzi w œrodowisku centrum handlowego jest problemem z³o¿onym i wymaga wykorzystania równie z³o¿onych algorytmów celem dok³adnego przybli¿enia rzeczywistych zachowañ. Dobrym podejœciem jest dekompozycja problemu modelowania z³o¿onego zjawiska na mniejsze, ³atwiejsze do rozwi¹zania podproblemy, którymi zajmuj¹ siê osobne, dobrze zdefiniowane i wyspecjalizowane algorytmy, i ponowne po³¹czenie wyników ich dzia³ania w spójn¹ ca³oœæ - metoda \emph{Divide and Conquer}.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[scale=0.3]{./img/Overview.pdf}
+        \caption{Przyk³adowa dekompozycja problemu modelowania ruchu ludzi w centrum handlowym.}
+        \label{fig:decomp}
+    \end{figure}
+
+W zale¿noœci od domeny rozwi¹zywanego problemu dekompozycja mo¿e zachodziæ ze wzglêdu na wiele czynników i dotyczyæ ró¿nych aspektów problemu - np. podzia³ wejœciowego zbioru danych na dwa mniejsze podzbiory w algorytmie \emph{Quick sort}, czy podzia³ modelu ruchu ludzi na elementarne zachowania, jak \emph{kolejkowanie}, \emph{atrakcja} lub \emph{oczekiwanie}.
+
+Na rysunku \ref{fig:decomp} zosta³a przedstawiona przyk³adowa dekompozycja problemu poruszanego w tym dokumencie. Wyszczególniono w niej podzia³ na globaln¹, preferowan¹ œcie¿kê wiod¹c¹ poruszaj¹cego siê po centrum handlowym agenta do obranych przez niego celów i lokalny ruch zgodny z gradientem ruchu obliczonym na podstawie jego otoczenia. Dodatkowo zastosowano podzia³ na specjalne strefy odpowiedzialne za modelowanie elementarnych zachowañ ludzi w centrach handlowych, takie jak strefy kolejek, czekania i gromadzenia siê, które realizowane s¹ za pomoc¹ innych modeli ruchu.
+
+\newpage
+    \subsection{State of the art}
+    \label{sec:sota}
+
+\noindent
+Zagadnienie modelowania ruchu ludzi jest od d³ugiego czasu postrzegane jako istotne z punktu widzenia sektora us³ug. Ju¿ w latach 80. XX wieku Aloys Borgers i Harry Timmermans zajmowali siê modelowaniem ruchu pieszych w œrodowisku centrum handlowego w oparciu o modele probabilistyczne (\cite{refs:route-choice-1}).
+Na przestrzeni lat modele ruchu pieszych ewoluowa³y w ró¿nych kierunkach, jak dynamika p³nów (\cite{refs:fluid-dynamics}), automaty komórkowe (\cite{refs:cellular-movement}), algorytmy genetyczne (\cite{refs:pedestrian-behaviour-2}) czy te¿ modele oparte o systemy wieloagentowe (\cite{refs:real-data-2}). \\
+[TODO] Który kierunek wybraliœmy i dlaczego? \\
+
+Praca \emph{Cellular automata microsimulation for modeling bi-directional pedestrian walkways} \linebreak (\cite{refs:cellular-movement}) skupia siê na modelowaniu dwukierunkowego ruchu ludzi z wykorzystaniem automatów komórkowych. Jej autorzy pokazuj¹, w jaki sposób automat komórkowy ze stosunkowo ma³¹ liczb¹ regu³ jest zdolny do symulowania skomplikowanych zachowañ, które dobrze oddaj¹ rzeczywistoœæ. Zaproponowany model i algorytm \textbf{CA-ped} pozwalaj¹ symulowaæ ruch ludzi w dwóch przeciwnych kierunkach na dwóch oddzielnych jak i mieszanych pasach ruchu, a tak¿e dynamicznych, wieloliniowych (\emph{dynamic multi-lane, DML}) pasach ruchu.
+[TODO] W jakim celu zosta³ stworzony algorytm Ped-4? \\
+
+Algorytm \textbf{CA-ped} wyró¿nia dwie fazy ruchu, z których ka¿da charakteryzuje siê trzema prostymi zasadami:
+
+\begin{enumerate}
+    \item Zmiana pasa ruchu
+        \begin{itemize}
+            \item Eliminacja konfliktów - dwóch przechodniów nie mo¿e znajdowaæ siê na jednej komórce, w przypadku konfliktu wolna komórka oddzielaj¹ca dwóch przechodniów jest przyznawana jednemu z nich z równym prawdopodobieñstwiem.
+            \item Identyfikacja wolnych przestrzeni - wybierany jest ten pas ruchu, który cechuje najwiêksza liczba wolnych komórek, co implikuje bezproblemowy ruch w przysz³oœci.
+            \item Zmiana pasa - ka¿dy przechodzieñ jest poruszany na jeden z dwóch s¹siednich pasów, lub pozostaje na obecnym pasie ruchu.
+        \end{itemize}
+    \item Ruch do przodu
+        \begin{itemize}
+          \item Obliczanie szybkoœci ruchu - dla ka¿dego przechodnia obliczana jest jego szybkoœæ uzale¿niona od istnienia, b¹dŸ nie, wolnych komórek w jego otoczeniu.
+          \item Wymijanie - jeœli bezpoœrednio przed przechodniem w niedu¿ej odleg³oœci istnieje przeciwstawny przechodzieñ, to z zadanym prawdopodobieñstwiem nastêpuje wyminiêcie obu przechodniów.
+          \item Ruch - ka¿dy przechodzieñ jest przemieszczany do przodu zgodnie z szybkoœci¹ jego ruchu.
+        \end{itemize}
+\end{enumerate}
+
+\emph{Pedestrian behaviour modelling - An application to Retail Movements using a Genetic Algorithm} (\cite{refs:pedestrian-behaviour-2}) identifikuje problemy i nieœcis³oœci wynikaj¹ce ze stosowania modeli opartych o najkrótsze œcie¿ki (\emph{shortest-paths}) i maksymalizacjê przydatnoœci (\emph{utility-maximization}) do symulowania ruchu ludzi w centrum handlowym. Specjalnie zaprojektowany algorytm genetyczny wykorzystuje informacje o optymalnych œcie¿kach i mapê routingu i atrybutów konkretnych miejsc centrum handlowego do znalezienia mniej optymalnych œcie¿ek prowadz¹cych agentów do wybranych przez nich sklepów, które lepiej modeluj¹ zachowanie ludzi w œrodowisku centrum handlowego.
+
+Na podstawie spo³ecznych i ekonomicznych atrybutów poszczególnych miejsc centrum handlowego i atrybutów ludzi przebywaj¹cych w centrum handlowym, takich jak szybkoœæ, wiek, p³eæ i przychód, oraz korzystaj¹c z mapy routing algorytm wyznacza listê miejsc zainteresowania, które kupuj¹cy planuj¹ odwiedziæ. Nastêpnie z u¿yciem algorytmu genetycznego wyznaczane s¹ œcie¿ki obejmuj¹ce wszystkie miejsca zainteresowania konkretnego kupuj¹cego, które zostaj¹ wykorzystane w dalszej czêœci symulacji.
+Istotnym jest wyszczególnienie fazy ruchu lokalnego, gdzie zachodz¹ dodatkowe zjawiska, których nie obejmuje zasiêg zastosowanego algorytmu genetycznego. Wspomniane zjawiska to \emph{omijanie przeszkód} (\emph{collision avoidance}) wystêpuj¹cych w lokalnym otoczeniu poruszaj¹cego siê cz³owika oraz \emph{grupowanie siê} (\emph{flocking}), czyli skomplikowane zjawisko przyci¹gania kupuj¹cego do grup innych kupuj¹cych zgodnie z jego socjologicznymi preferencjami. \\
+
+\emph{The Simulated Consumer - an Agent-based approach to Shopping Behaviour} \linebreak (\cite{refs:real-data-2}) identyfikuje istnienie du¿ej liczby ró¿nych schematów zachowañ i szeroki zakres problemu modelowania ruchu ludzi w centrum handlowym proponuj¹c podejœcie agentowe jako dostatecznie elastyczn¹ metodê modelowania skomplikowanej dynamiki kupuj¹cych. W oparciu o skorelowane w niewielkim stopniu dane pochodz¹ce z pó³nocy Szwecji i po³udnia Niemiec autorzy definiuj¹ agentowy model wyboru miejsc zainteresowania, który nastêpnie z powodzeniem stosuj¹ do symulowania zachowania kupuj¹cych w dwóch ró¿nych sektorach - spo¿ywczym i odzie¿owym, jednoczeœnie potwierdzaj¹ elastycznoœæ zaproponowanego modelu. \\
+
+Wiêcej interesuj¹cych publikacji zwi¹zanych z tematyk¹ tego projektu zawarto w secji \ref{sec:refs}.
+
+\newpage
+    \section{Model centrum handlowego}
+    \label{sec:mall-model}
+
+\noindent
+Zgodnie z metod¹ \emph{Divide and Conquer} zaproponowan¹ we \hyperref[sec:intro]{wprowadzeniu}, zdecydowano siê na dekompozycjê problemu modelowania ruchu ludzi w centrum handlowym na elementarne, abstrakcyjne zachowania oraz, ze wzglêdu na cele poszczególnych agentów i sposoby ich osi¹gania, na globalne i lokalne planowanie trasy podró¿y, co zawarto na rysunku \ref{fig:overview}.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[scale=0.3]{./img/Overview.pdf}
+        \caption{Zastosowana dekompozycja problemu.}
+        \label{fig:overview}
+    \end{figure}
+
+Model centrum handlowego przewiduje istnienie specjalnych stref, wewn¹trz których algorytmy odpowiedzialne za poruszanie agentów s¹ modyfikowane lub zastêpowane celem modelowania dobrze zdefiniowanych elementarnych zachowañ, takich jak \emph{kolejkowanie}, czy \emph{grupowanie siê}. W wyniku obserwacji stwierdzono istnienie czterech rodzajów stref specjalnych - strefy przyci¹gania uwagi (atraktory), kolejki, przejœcia i miejsca oczekiwania (opóŸniacze).
+
+    \subsection{Atraktory}
+    \label{sec:attractors}
+
+Atraktor jest specjaln¹ stref¹ przyci¹gaj¹c¹ uwagê agentów poruszaj¹cych siê po centrum handlowym. Atraktor ma za zadanie modelowaæ obecnoœæ przedmiotu lub zjawiska, które przykuwa uwagê ludzi na terenie centrum handlowego, a wynikiem jego dzia³ania jest spontaniczne powstawanie skupisk ludzi - \emph{grupowanie siê}.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[scale=0.4]{./img/Crowding.pdf}
+        \caption{Grupowanie siê agentów w obrêbie atraktora.}
+        \label{fig:crowding}
+    \end{figure}
+
+Atraktory ró¿ni¹ siê miêdzy sob¹ typami - atraktory ró¿nych typów przyci¹gaj¹ inne rodzaje agentów, co modeluje ró¿nice w preferencjach ludzi przebywaj¹cych w centrum handlowym.
+
+    \subsection{Kolejki}
+    \label{sec:queues}
+
+Drugim istotnym z punktu widzenia modelu centrum handlowego typem strefy specjalnej jest strefa kolejki. Zadaniem kolejki jest modelowanie zjawiska \emph{œcis³ego kolejkowania siê} ludzi, na przyk³ad przy kasie sklepowej, lub na stopniach eskalatora, co nie wynika z ogólnego modelu ruchu.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[scale=0.4]{./img/Queueing.pdf}
+        \caption{Kolejkowanie siê ludzi przy kasie sklepowej z zaznaczon¹ kolejk¹ œcis³¹.}
+        \label{fig:queueing}
+    \end{figure}
+
+    \subsection{Przejœcia/wejœcia/wyjœcia}
+    \label{sec:entrance-exits}
+
+Strefy przejœæ podobnie jak koleki modyfikuj¹ preferencje odleg³oœciowe agentów i prow¹dz¹ do zmniejszenia odleg³oœci miêdzy nimi, co nie wynika z ogólnego modelu ruchu. Przejœcia, jak sama nazwa wskazuje, modeluj¹ wszelkiego rodzaju wejœcia, wyjœcia i przejœcia prowadz¹ce miêdzy piêtrami centrum handlowego.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[scale=0.4]{./img/EntranceExits.pdf}
+        \caption{Poruszanie siê agenta po eskalatorze pomiêdzy piêtrami centrum handlowego.}
+        \label{fig:passing-through}
+    \end{figure}
+
+    \subsection{Miejsca oczekiwania (OpóŸniacze)}
+    \label{sec:holders}
+
+Ostatnim istotnym typem strefy specjalnej jest miejsce oczekiwania, modeluj¹ce wszelkiego rodzaju miejsca spêdzania czasu w bezruchu.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[scale=0.4]{./img/Held.pdf}
+        \caption{Agenci oczekuj¹cy koñca œwiata.}
+        \label{fig:held-down}
+    \end{figure}
+
+\newpage
+    \section{Model ruchu ludzi}
+    \label{sec:move-model}
+
+\noindent
+W zastosowanym algorytmie mo¿na wyszczególnieæ dwie g³ówne, wzajemnie od siebie zale¿ne fazy - fazê \hyperref[sec:tactical]{taktyczn¹} oraz fazê \hyperref[sec:operational]{operacyjn¹}, których interakcjê przestawiono na poni¿szym, uproszczonym diagramie.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[scale=0.55]{./img/ActorActivity.pdf}
+        \caption{Diagram aktywnoœci agentów.}
+        \label{fig:actor-activity}
+    \end{figure}
+
+Algorytm rozpoczyna dzia³anie od wygenerowania agenta na podstawie wczeœniej zdefiniowanych archetypów.
+Dla ka¿dego agenta wybierana jest wstêpna lista miejsc docelowych, które zostan¹ przez niego odwiedzone w czasie dzia³ania symulacji, oraz obliczana jest optymalna œcie¿ka ³¹cz¹ca wybrane w poprzednim kroku miejsca docelowe. Algorytm nastêpnie modyfikuje œcie¿kê w oparciu o mapê rozk³adu stref specjalnych centrum handlowego by lepiej modelowaæ faktyczne zamiary danego agenta. Faza taktyczna koñczy siê wybraniem niewielkiej iloœci punktów poœrednich le¿¹cych na wyznaczonej œcie¿ce.
+
+Po wygenerowaniu niezbêdnych danych taktycznych dla ka¿dego agenta algorytm przechodzi do fazy operacyjnej, która odpowiada za w³aœciwe przemieszczanie agentów. Faza ta zachodzi w lokalnym otoczeniu ka¿dego agenta i odpowiada za zachowania takie jak omijanie przeszkód, grupowanie siê i pod¹¿anie za obran¹ œcie¿k¹.
+Algorytm na podstawie bezpoœredniego otoczenia agenta oraz metadanych dotycz¹cych obecnego celu jego podró¿y podejmuje decyzje o mo¿liwoœci wykonania ruchu, lub w przypadku skrajnym o modyfikacji wybranej œcie¿ki prowadz¹cej do celu, czy nawet zmianie aktualnego celu podró¿y.
+W przypadku osi¹gniêcia miejsca docelowego algorytm przechodzi do rozpatrywania nastêpnego miejsca docelowego, lub w tryb ``b³¹dzenia'', gdy osi¹gniêto ju¿ wszystkie wyznaczone cele.
+
+\newpage
+        \subsection{Faza taktyczna}
+        \label{sec:tactical}
+
+        \begin{figure}[H]
+            \centering
+            \includegraphics[scale=0.3]{./img/Tactical.pdf}
+            \caption{Zakres operacji taktycznej czêœci modelu ruchu.}
+            \label{fig:tactical}
+        \end{figure}
+
+\noindent
+Faza taktyczna zachodzi globalnie dla ka¿dego agenta bez uwzglêdnienia jego lokalnego otoczenia, innych agentów, czy fizycznych w³aœciwoœci centrum handlowego - nie jest istotnym, czy dany korytarz zosta³ zablokowany przez grupê ludzi i nie umo¿liwia przejœcia. Faza ta modeluje abstrakcyjne zamiary agenta i jej celem jest przede wszystkim wybór listy miejsc docelowych oraz wyznaczenie dróg do nich prowadz¹cych. \\
+
+Osi¹gniêto to dziêki \hyperref[sec:path-finding]{algorytmowi znajdowania œcie¿ek A*} oraz \hyperref[sec:mall-impl]{mapie rozk³adu stref specjalnych} centrum handlowego, która jest wykorzystywana jako dodatkowa heurystyka A* - specjalne strefy centrum handlowego modyfikuj¹ estymowan¹ ocenê danego punktu wyznaczanej œcie¿ki nadaj¹c jej po¿¹dany kszta³t i prowadz¹c j¹ w odpowiedni sposób do celu podró¿y. \\
+
+Przy wyznaczaniu œcie¿ek pod uwagê brane s¹ \hyperref[sec:attractors]{atraktory}, \hyperref[sec:queues]{kolejki} i \hyperref[sec:entrance-exits]{przejœcia}, które algorytm stara siê uwzglêdniæ za pomoc¹ opisanej heurystyki.
+
+\newpage
+        \subsection{Faza operacyjna}
+        \label{sec:operational}
+
+        \begin{figure}[H]
+            \centering
+            \includegraphics[scale=0.3]{./img/Operative.pdf}
+            \caption{Zakres dzia³ania operacyjnej czêœci modelu ruchu.}
+            \label{fig:operational}
+        \end{figure}
+
+        % TODO Potrzeba wiêkszego opisu, który bardziej zag³êbia siê w wybrany algorytm operacyjny.
+
+\noindent
+Faza operacyjna zachodzi w lokalnym otoczeniu ka¿dego agenta, a jej celem jest wykonanie w³aœciwego ruchu agenta. Faza ta jest odpowiedzialna za unikanie kolizji i omijanie przeszkód. Pod uwagê brani s¹ inni agenci oraz metadane dotycz¹ce drogi prowadz¹cej do aktualnego celu podró¿y wygenerowane w taktyczniej fazie dzia³ania algorytmu. W implementacji fazy operacyjnej wykorzystano zmodyfikowane algorytmy \hyperref[sec:movement-impl]{Ped-4} i \hyperref[sec:social-force-impl]{Social-Force}. \\
+
+Oryginalny \textbf{Ped-4} zosta³ zaproponowany w pracy \textit{Modeling Four Directional Pedestrian Movements} (\cite{refs:4-way-movement}). Poniewa¿ prowadzi on do samoorganizowania siê pieszych w kolumny, w symulacji galerii u¿ywany jest w odniesieniu do przestrzeni, po których ruch odbywa siê w sposób uporz¹dkowany (tj. do korytarzy, alejek oraz niewielkich skrzy¿owañ). \\
+
+\noindent
+Algorytm sk³ada siê z nastêpuj¹cych etapów:
+\begin{enumerate}
+\item \textbf{Dostosowanie kierunku ruchu} \
+    - gdy k¹t miêdzy kierunkiem ruchu, a kierunkiem do celu przekroczy wartoœæ graniczn¹, pieszy skrêca w stronê celu.
+\item \textbf{Zmiana pasa ruchu} \
+    - obliczana jest iloœæ wolnych pól dla obecnie zajmowanego pasa i dla pasów s¹siednich. Pieszy zajmuje ten pas, który na chwilê obecn¹ umo¿liwia mu przesuniêcie siê o najwiêksz¹ iloœæ pól do przodu. Przy wyborze preferowany jest dotychczasowy pas. W przypadku, gdy obecnie zajmowany pas nie jest ``czysty'' (tzn. z naprzeciwka idzie inny pieszy), aby uniknaæ kolizji pieszy stara siê ``schowaæ'' za inn¹ osob¹ id¹c¹ w tym samym co on kierunku.
+\item \textbf{Krok naprzód} \
+    - w przypadku, gdy pole bezpoœrednio przed pieszym (zgodnie z kierunkiem ruchu) jest wolne - próba zajêcia go. Jeœli nie jest to mo¿liwe - próba dokonania zamiany miejsca z innym pieszym. Wymiana odzwierciedla sytuacjê, gdy piesi ``skrêcaj¹ tu³owie'', by ``przecisn¹æ siê'' obok siebie. Etap \textit{krok naprzód} powtarzany jest wielokrotnie, dopóki nie skoñcz¹ siê ``punkty ruchu'' pieszego.
+\end{enumerate}
+
+\newpage
+\noindent
+Poni¿ej zamieszczono preferowan¹ kolejnoœæ dokonywania zamian:
+
+\begin{enumerate}
+\item miêdzy pieszymi id¹cymi w przeciwnych kierunkach na tym samym pasie
+\item miêdzy pieszymi id¹cymi w przeciwnych kierunkach na s¹siednich pasach (na polach po przek¹tnej)
+\item miêdzy pieszymi id¹cymi w kierunkach prostopad³ych wzglêdem siebie (na polach po przek¹tnej)
+\item miêdzy pieszymi id¹cymi w kierunkach prostopad³ych wzglêdem siebie (jeden ``tarasuje'' drugiemu drogê)
+\end{enumerate}
+
+\noindent
+Pieszy mo¿e wybraæ dan¹ mo¿liwoœæ tylko wtedy, gdy jego ``partner'' do zamiany nie wykona³ jeszcze swojego ruchu. Jeœli dana wymiana nie dojdzie do skutku, próbowana jest kolejna opcja z listy (znajduje to potwierdzenie w obserwacjach - w sytuacji du¿ego t³oku ludzie chêtniej dokonuj¹ takich manewrów). \\
+
+Algorytm \textbf{Social Force} opiera siê na obserwacji, ¿e ka¿dy cz³owiek posiada wokó³ siebie (g³ównie przed sob¹) tzw. \textit{strefê komfortu}, w której niechêtnie widzi osoby postronne. Po zsumowaniu stref komfortu wszystkich agentów otrzymuje siê swoisty rozk³ad potencja³u, na podstawie którego wyznaczany jest ich dalszy kierunek ruchu. Zasada, wed³ug której odbywa siê ruch, jest prosta - dojœæ do celu po polach o jak najmniejszym potencjale. Jeœli w danym momencie brak jest dostêpnych pól, pieszy ``drepcze'' w miejscu w oczekiwaniu na zwolnienie siê któregoœ z nich. Algorytm \textit{Social Force} s³u¿y g³ównie do modelowania miejsc, w których ludzie ``wa³êsaj¹ siê'', jak place czy wnêtrza sklepów.
+
+\newpage
+    \section{Implementacja}
+    \label{sec:implementation}
+
+    W celu wykonania projektu pos³u¿ono siê jêzykiem \textbf{Java} oraz bibliotekami \textbf{Java Swing} oraz \href{http://www.randelshofer.ch/monte/}{\textbf{Monte Media Library}}. Poni¿ej zawarto opis implementacji wybranych algorytmów i obiektów symulacji.
+
+        \subsection{Reprezentacja centrum handlowego}
+        \label{sec:mall-impl}
+
+        Centra handlowe reprezentowane s¹ za pomoc¹ map bitowych (plików \emph{.bmp}), których piksele koduj¹ odpowiadaj¹ce im komórki siatki symulacji, co pozwala tworzyæ nowe rozk³ady pomieszczeñ i stref spejcalnych w bardzo prosty i szybki sposób. Implementacja przewiduje istnienie dwóch map dla ka¿dego centrum handlowego - mapê rozk³adu pomieszczeñ i algorytmów ruchu fazy operacyjnej (rysunek \ref{fig:mall-layout}) oraz mapê rozk³adu stref specjalnych centrum handlowego (rysunek \ref{fig:mall-features}).
+
+        \begin{figure}[H]
+            \centering
+            \includegraphics[scale=0.3]{./img/MallLayout.pdf}
+            \caption{Przyk³adowy rozk³ad pomieszczeñ i algorytmów ruchu ma³ego centrum handlowego.}
+            \label{fig:mall-layout}
+        \end{figure}
+
+        \emph{Mapa rozk³adu pomieszczeñ} zawiera informacje o fizycznych w³aœciwoœciach pomieszczeñ modelowanego centrum handlowego - usytu³ówanie œciañ i innych obiektów blokuj¹cych przejœcie. Dodatkowo zawarto na niej rozk³ad algorytmów ruchu wykorzystanych w \hyperref[sec:operational]{fazie operacyjnej}, co pozwala jednoznacznie okreœliæ po³o¿enie korytarzy, skrzy¿owañ i innych cech centrum handlowego zwi¹zanych z ruchem agentów. \\
+
+\noindent
+Wartoœci znacz¹ce poszczególnych pixeli $RGB$ mapy:
+
+        \begin{itemize}
+            \item $(0x00, *, *)$ - wartoœæ zarezerwowana dla œcian i innych obiektów blokuj¹cych przejœcie.
+            \item $(0x7F, *, *)$ - wartoœæ determinuj¹ca wykorzystanie algorytmu \hyperref[sec:movement-impl]{Ped-4}.
+            \item $(0xFF, *, *)$ - wartoœæ determinuj¹ca wykorzystanie algorytmu \hyperref[sec:social-force-impl]{Social Force}.
+        \end{itemize}
+
+        \begin{figure}[H]
+            \centering
+            \includegraphics[scale=0.3]{./img/MallFeatures.pdf}
+            \caption{Przyk³adowy rozk³ad stref specjalnych ma³ego centrum handlowego.}
+            \label{fig:mall-features}
+        \end{figure}
+
+        \emph{Mapa rozk³adu stref specjalnych} centrum handlowego zawiera informacje o funkcjonalnych cechach modelowanego centrum handlowego - rozmieszczenie miejsc przeznaczonych do czekania, kolejek przy kasach sklepowych, okien wystawowych i sieci routingu u³atwiaj¹cej przemieszczanie siê w centrum handlowym. Informacje te wykorzystywane s¹ przede wszystkim przez \hyperref[sec:tactical]{fazê taktyczn¹} wykorzystanego algorytmu, gdzie s¹ s³u¿¹ jako \hyperref[sec:path-deviation]{dodatkowa heurystyka} \hyperref[sec:path-finding]{algorytmu wyszukiwania œcie¿ek A*}. \\
+
+\noindent
+Wartoœci znacz¹ce poszczególnych pixeli $RGB$ mapy:
+
+        \begin{itemize}
+            \item $(0x7F, A, H)$ - wartoœæ oznaczaj¹ca \hyperref[sec:path-deviation]{uogólniony atraktor} o \emph{atrakcyjnoœci} $A$ i \emph{czasie wstrzymania} $H$.
+            \item $(0xFF, *, *)$ - wartoœæ oznaczaj¹ca \hyperref[sec:entrance-exits]{przejœcia/wejœcia}, które odpowiednio tworz¹ lub usuwaj¹ agentów z symulacji.
+        \end{itemize}
+
+\noindent
+Z racji ograniczonego czasu i ni¿szego priorytetu implementacja nie uwzglêdnia istnienia wielu piêter w centrum handlowym - symulacja ruchu ludzi wewn¹trz wielopiêtrowego centrum handlowego mo¿e byæ traktowana jako wiele symulacji ruchu ludzi wewn¹trz jednopiêtrowego centrum handlowego.
+
+        \subsection{Wybór puntków docelowych}
+        \label{sec:destination-choice}
+
+        \emph{Punkty docelowe} reprezentuj¹ cele podró¿y agentów. Z racji mniejszego priorytetu i braku czasu algorytm wybiera zadan¹ iloœæ losowych miejsc znajduj¹cych siê we wnêtrzu centrum handlowego, które nastêpnie sortuje celem minimalizacji sumarycznej d³ugoœci drogi je ³¹cz¹cej. Opisany sposób wyboru miejsc docelowych pozwala symulowaæ wszystkie zachowania poruszaj¹cych siê ludzi na poziomie lokalnym (na przyk³ad kolejkowanie siê) i wiêkszoœæ schematów zachowañ t³umu na poziomie globalnym (z wy³¹czeniem bardziej abstrakcyjnych zachowañ uwarunkowanych socjologicznie i kulturowo, takich jak ró¿ne stosunki iloœciowe agentów danego typu w ró¿nych czêœciach centrum handlowego).
+
+\newpage
+        \subsection{Znajdowanie œcie¿ek}
+        \label{sec:path-finding}
+
+W celu wyznaczania œcie¿ek prowadz¹cych do punktów docelowych wykorzystano algorytm \textbf{A*}. A* jest algorytmem kompletnym, s³u¿¹cym do wyznaczania najkrótszej drogi ³¹cz¹cej dwa wierzcho³ki grafu, który w ka¿dym przypadku jest w stanie znaleŸæ drogê, jeœli takowa istnieje. A* wykorzystuje \hyperref[sec:path-deviation]{heurystykê}, która estymuje koszt œcie¿ki prowadz¹cej z danego wierzcho³ka do celu, staraj¹c siê rozpatrywaæ tylko najbardziej obiecuj¹ce wierzcho³ki. \\
+
+\noindent
+Algorytm przochowuje zbiory wierzcho³ków ``otwartych'' i ``zamkniêtych'', czyli odpowiednio, wierzcho³ków, które s¹ rozpatrywane i tych, które ju¿ zosta³y sprawdzone. Dzia³anie algorytmu rozpoczyna siê od dodania aktualnej pozycji agenta do zbioru wierzcho³ków otwartych. W ka¿dym nastêpnym kroku algorytm wykonuje iteracyjnie nastêpuj¹ce operacje:
+
+        \begin{itemize}
+            \item Ze zbioru wierzcho³ków otwartych wybierany jest najbardziej obiecuj¹cy wierzcho³ek $x$, minimalizuj¹cy funkcjê $f(x)$:
+              \[ f(x) = g(x) + h(x) \]
+              gdzie $g(x)$ okreœla d³ugoœæ drogi prowadz¹cej z wierzcho³ka pocz¹tkowego do wierzcho³ka $x$, a $h(x)$ okreœla przewidywan¹ przez heurystykê d³ugoœæ drogi ³¹cz¹cej wierzcho³ek $x$ i cel podró¿y.
+            \item W przypadku osi¹gniêcia punktu docelowego algorytm koñczy siê sukcesem.
+            \item W przeciwnym przypadku wierzcho³ek $x$ dodawany jest do zbioru wierzcho³ków zamikniêtych, a s¹siaduj¹ce z nim wierzcho³ki (wierzcho³ki osi¹galne w jednym kroku zaczynaj¹c w $x$), które nie nale¿¹ do zbioru wierzcho³ków zamkniêtych, dodawane s¹ do zbioru wierzcho³ków otwartych.
+        \end{itemize}
+
+\noindent
+Zale¿nie od zastosowanej heurystyki algorytm A* jest w stanie dostarczaæ optymalne œcie¿ki ³¹cz¹ce dwa punkty lub suboptymalne œcie¿ki, które s¹ obliczane szybciej. Ze wzglêdu na rozwi¹zywany problem i brak wymogu dostarczania optymalnych œcie¿ek w implementacji zastosowano z³o¿on¹, dopuszczaln¹ (\emph{ang. admissible}) heurystykê opisan¹ w nastêpnej sekcji, któr¹ dodatkowo obarczono wag¹ $\epsilon = 5$, co pozwala szybko generowaæ œcie¿ki o po¿¹danym i koszcie nie przekraczaj¹cym $\epsilon$ razy kosztu œcie¿ki optymalnej.
+
+        \subsection{Dewiacja œcie¿ek}
+        \label{sec:path-deviation}
+
+        Dewiacja œcie¿ek zachodzi podczas dzia³ania algorytmu wyszukiwania œcie¿ek opisanego w poprzedniej sekcji celem u³atwienia zachodzenia pewnych zachowañ, takich jak poruszanie siê w odpowiedni sposób po korytarzach centrum handlowego. Odpowiednia dewiacja œcie¿ek zosta³a osi¹gniêta przez modyfikacjê heurystyki zastosowanego algorytmu A* - ka¿dy fragment \hyperref[fig:mall-features]{mapy rozk³adu stref specjalnych} centrum handlowego posiada przypisan¹ mu wartoœæ determinuj¹c¹ parametry \textbf{uogólnionego atraktora} - \emph{atrakcjê A} oraz \emph{czas wstrzymania H}. \\
+
+        \emph{Atrakcja} odpowiada za przyci¹ganie agentów do pewnych stref centrum handlowego i ma za zadanie przede wszystkim umo¿liwiæ realizacjê zdefiniowanych przy analizie problemu \hyperref[sec:attractors]{atraktorów}. Jej wartoœæ kodowana jest przez komponent $G$ pixeli $RGB$ mapy rozk³adu stref specjalnych centrum handlowego, koduj¹cych atraktory (komponent $R$ równy $0x7F$). Wartoœæ komponentu $G$ nale¿y podzieliæ przez $0x7F$ celem przeskalowania do przedzia³u $[0, 2)$. Heurystyka algorytmu A* wykorzystuje tê wartoœæ, jako dodatkowy mno¿nik estymowanego kosztu œcie¿ki, tote¿ wartoœæ 0 oznacza najsilniejsz¹ atrakcjê, wartoœæ 1 brak atrakcji natomiast wartoœæ 2 oznacza odpychanie - algorytm wyszukiwania œcie¿ek bêdzie preferowa³ inne drogi.
+
+        \emph{Czas wstrzymania} odpowiada za opóŸnianie agentów podczas wykonywania ruchu - agent osi¹gaj¹cy komórkê siatki symulacji obarczon¹ czasem oczekiwania zostaje opóŸniony na zadan¹ iloœæ czasu. Wartoœæ czasu wstrzymania kodowana jest przez komponent $B$ pixeli $RGB$ mapy rozk³adu stref specjalnych centrum handlowego, koduj¹cych atraktory. Wartoœæ tego komponentu traktowana jest jako iloœæ kroków symulacji, na które opóŸniany agent zostanie wstrzymany. \\
+
+Implementacja \emph{uogólnionego atraktora} okaza³a siê na tyle elastyczna, ¿e wyeliminowa³a koniecznoœæ osobnej implementacji \hyperref[sec:queues]{kolejek} i \hyperref[sec:holders]{opóŸniaczy} - kolejki realizowane s¹ jako linie znacz¹co zwiêkszonej atrakcji o krótkim czasie wstrzymania, natomiast opóŸniacze s¹ punktami o znacz¹co zwiêkszonym czasie wstrzymania. \hyperref[sec:attractors]{Atraktory} zosta³y zrealizowane jako gradienty zwiêkszaj¹cej siê atrakcji i czasu wstrzymania - agenci odwiedzajacy atraktor spêdzaj¹ w nim tym wiêcej czasu, im bli¿ej jego centrum siê znajduj¹. Dodatkowym atutem zastosowanej implementacji jest mo¿liwoœæ routingu agentów w centrum handlowym. Wszystkie formy stref specjalnych wyra¿onych przez modyfikacjê heurystyki algorytmu A* zosta³y zawarte na pogl¹dowym rysunku \ref{fig:mall-features}.
+
+        \subsection{Reprezentacja agentów}
+        \label{sec:actor-impl}
+
+        Na chwilê obecn¹ agenci opisywani s¹ przez parametry wp³ywaj¹ce tylko i wy³¹cznie na ich ruch w fazie operacyjnej. Docelowo planowane jest rozszerzenie ich zachowania o preferencje dotycz¹ce odwiedzanych miejsc, czasu spêdzanego w galerii itp.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[scale=0.75]{./img/agent.png}
+        \caption{Klasa agenta}
+        \label{fig:agent}
+    \end{figure}
+
+\noindent
+Znaczenie poszczególnych parametrów:
+\begin{itemize}
+\item \textbf{vMax} â€“ maksymalna iloœæ punktów ruchu do wykorzystania w danej iteracji fazy operacyjnej
+\item \textbf{agility} â€“ sk³onnoœæ do dokonywania zamian z innymi podczas etapu poruszania agentów
+\item \textbf{position} â€“ po³o¿enie agenta na planszy galerii
+\item \textbf{direction} â€“ aktualny kierunek ruchu (dostêpne kierunki s¹ zgodne ze stronami œwiata)
+\item \textbf{route} â€“ lista wspó³rzêdnych p³ytek-celów do odwiedzenia
+\item \textbf{forceField} â€“ opis wartoœci potencja³u pól wokó³ agenta (przy za³o¿eniu, ¿e agent zwrócony jest w kierunku pó³nocnym)
+\item \textbf{fieldsMoved} â€“ odleg³oœæ (mierzona w p³ytkach) przebyta od ostatniego celu do danej chwili
+\item \textbf{initialDistanceToTarget} â€“ teoretyczna minimalna odleg³oœæ od poprzedniego do obecnego celu
+\item \textbf{holdTime} â€“ pozosta³y czas oczekiwania (np. w kolejce)
+\end{itemize}
+
+Czêœæ spoœród powy¿szych parametrów agenta inicjalizowana jest na podstawie plików zawieraj¹cych opisy pewnych ogólnych charakterystyk ludzi, np. "typ dynamiczny" oznacza cz³owieka poruszaj¹cego siê szybko i sk³onnego do dokonywania zamian, "typ emeryta" oznacza stateczny krok i niechêæ do zamian.
+
+        \subsection{Ruch agentów i Ped-4}
+        \label{sec:movement-impl}
+
+\noindent
+Faza operacyjna sk³ada siê z czterech wykonywanych w pêtli etapów, co zilustrowano na poni¿szym schemacie:
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[scale=0.3]{./img/OperationalLoop.pdf}
+        \caption{Pêtla fazy operacyjnej}
+        \label{fig:operloop}
+    \end{figure}
+
+\indent Sprawdzanie osi¹gniêcia celu s³u¿y wyznaczeniu kolejnego celu, o ile poprzedni zosta³ osi¹gniêty. Cel mo¿na osi¹gn¹æ na dwa sposoby: wchodz¹c bezpoœrednio na p³ytkê o zadanych wspó³rzêdnych b¹dŸ wchodz¹c na p³ytkê w s¹siedztwie celu (w tym przypadku prawdopodobieñstwo uznania celu za osi¹gniêty zale¿y od odleg³oœci p³ytki od niego). Po wyznaczeniu nowego celu aktualizowane s¹ parametry wykorzystywane przez algorytmy ruchu, jak pocz¹tkowa (teoretyczna) minimalna odleg³oœæ od celu. \newline
+\indent Przygotowanie agentów polega na wywo³aniu dla ka¿dego z nich metody \emph{prepare()} algorytmu przypisanego do p³ytki, na której agent aktualnie siê znajduje. \newline
+\indent Obliczanie dostêpnych w danym obiegu fazy iteracyjnej punktów ruchu to przepisanie aktualnej prêdkoœci maksymalnej ka¿dego z agentów. \newline
+\indent W etapie poruszania agentów agenci rozpatrywani s¹ cyklicznie. W jednej iteracji (``kroku'') ka¿dy z agentów mo¿e wykonaæ tylko jedn¹ akcjê,  np. czkaæ b¹dŸ przemieœciæ siê o jedno (!) pole. Dziêki takiemu rozwi¹zaniu ¿aden z agentów nie jest faworyzowany przy dostêpie do pól.
+
+\begin{algorithm}
+\caption{Faza operacyjna}
+\label{alg2}
+\begin{algorithmic}
+\Procedure{operation\_phase}{}
+    \ForAll{agent w galerii}
+    \Comment{sprawdŸ osi¹gniêcie celu}
+        \If{agent osi¹gn¹³ cel OR agent uzna³, ¿e osi¹gn¹³ cel}
+            \State pobierz kolejny cel z listy
+            \State zapisz statystyki dotycz¹ce dalszej drogi
+        \EndIf
+    \EndFor
+    \newline
+    \ForAll{agent w galerii}
+    \Comment{przygotuj agentów}
+        \State \textbf{call} Algorithm.prepare with agent
+    \EndFor
+    \newline
+    \ForAll{agent w galerii}
+    \Comment{oblicz punkty ruchu}
+        \State punkty\_ruchu\_agenta $\gets$ predkosc\_agenta
+    \EndFor
+    \newline
+    \For{krok od 1 do $v_{max}$}
+    \Comment{porusz agentów}
+        \ForAll{agent w galerii}
+            \If{agent jest wstrzymywany}
+                \State zmniejsz pozosta³y czas wstrzymania
+            \ElsIf{agent nie wykorzysta³ jeszcze w tym kroku punktów ruchu}
+                \State \textbf{call} Algorithm.nextIterationStep with agent
+                \State \textbf{call} Feature.performAction with agent
+                \State wykorzystaj punkt ruchu
+            \EndIf
+        \EndFor
+    \EndFor
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+Metoda \emph{performAction()}, wywo³ywana dla elementów galerii, ustawia parametry agenta zwi¹zane z symulacj¹ takich zdarzeñ, jak np. oczekiwanie w kolejce. \newline
+
+Wszystkie algorytmy ruchu implementuj¹ interfejs \emph{MovementAlgorithm}. Interfejs ten zawiera dwie metody wywo³ywane w fazie operacyjnej dla ka¿dego agenta:
+\begin{itemize}
+\item \emph{prepare()} - wywo³ywana jeden raz, na pocz¹tku; s³u¿y ustawieniu agenta na odpowiedniej pozycji pocz¹tkowej
+\item \emph{nextIterationStep()} - wywo³ywana tyle razy, ile agent posiada punktów ruchu; obs³uguje ruch "do przodu"; przy ka¿dym jej wywo³aniu agent przesuwa siê co najwy¿ej o jedno pole (w s¹siedztwie Moore'a)
+\end{itemize}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[scale=0.75]{./img/move_algos.png}
+        \caption{Interfejs \emph{MovementAlgorithm} i jego realizacje}
+        \label{fig:movealgo}
+    \end{figure}
+
+        \subsection{Social Force}
+        \label{sec:social-force-impl}
+
+Poni¿ej przedstawiono pseudokody metody odpowiedzialnej za ruch "do przodu" w algorytmie Social Force:
+
+\begin{algorithm}
+\caption{Ruch agenta w algorytmie Social Force}
+\label{alg1}
+\begin{algorithmic}
+\Procedure{nextIterationStep}{}
+    \If{brak mo¿liwoœci ruchu}
+        \State obróæ agenta
+        \Comment{umo¿liwia przeszukanie nowych obszarów}
+    \Else
+        \State cel $\gets$ wyznacz\_pole\_o\_najwiekszym\_potencjale()
+        \State przesuñ agenta na docelow¹ p³ytkê
+        \State odzwierciedl kierunek wykonanego ruchu poprzez zmianê zwrotu agenta
+    \EndIf
+\EndProcedure
+\newline
+\Function{wyznacz\_pole\_o\_najwiekszym\_potencjale}{}
+    \State dostepne\_pola $\gets$ wyznacz\_dostepne\_pola()
+    \ForAll{dostêpne pole}
+        \State uwzglêdnij wartoœæ pola potencja³u innych ludzi i odleg³oœæ od celu
+    \EndFor
+    \If{agent jest zmêczony}
+        \State zwiêksz dodatkowo potencja³ dostêpnego pola najbli¿ej celu
+    \EndIf
+    \State pozostaw pola o najwy¿szym potencjale \\
+    \Return{pole le¿¹ce najbli¿ej celu}
+\EndFunction
+\newline
+\Function{wyznacz\_dostepne\_pola}{}
+    \State pola\_agenta $\gets$ pola w s¹siedztwie von Neumanna le¿¹ce w pó³kolu wyznaczonym przez kierunek ruchu agenta
+    \State pola\_celu $\gets$ pola w s¹siedztwie von Neumanna le¿¹ce w pó³kolu wyznaczonym przez kierunek do celu \\
+    \Return{pola\_agenta AND pola\_celu}
+    \Comment{czêœæ wspólna zbiorów}
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\indent Funkcja wyznaczaj¹ca dostêpne pola ogranicza mo¿liwoœ ruchu tak, aby agent albo dalej przemieszcza³ siê po dotychczasowej trajektorii, albo skrêci³ w stronê celu. \\
+\indent Potencja³ pola obliczany jest na podstawie si³y oddzia³ywania innych ludzi (ujemna sk³adowa) oraz odleg³oœci pola od celu (dodatnia sk³adowa). W przypadku, gdy agent ju¿ doœæ d³ugo zmierza do celu (tzn. przebyta przez niego droga znacz¹co przekracza minimaln¹ drogê konieczn¹ do osi¹gniêcia celu), lecz nie mo¿e go osi¹gn¹æ, przestaje zwracaæ tak¹ uwagê na innych agentów â€“ efekt ten zosta³ osi¹gniêty przez dodatkowe zwiêkszenie potencja³u dostêpnej p³ytki le¿¹cej najbli¿ej celu. \\
+\indent W przypadku, gdy brak jest dostêpnych p³ytek, agent obraca siê odrobinê w miejscu, by w nastêpnym kroku zyskaæ nowe mo¿liwoœci ruchu (ze wzglêdu na zmianê zbioru dostêpnych p³ytek).
+
+\newpage
+        \subsection{Wizualizacja i pozyskiwanie danych}
+        \label{sec:vis-and-data}
+
+        Wizualizacjê przebiegu symulacji wykonano w oparciu o bibliotekê \textbf{Java Swing} z racji na prostotê implementacji i zadowalaj¹ce efekty wizualne, jakie ona dostarcza. Na rysunku \ref{fig:mall-sim-win} zaprezentowano wygl¹d g³ównego okna programu podczas przyk³adowej symulacji.
+
+        \begin{figure}[H]
+            \centering
+            \includegraphics[scale=0.5]{./img/MallSim.pdf}
+            \caption{G³ówne okno programu.}
+            \label{fig:mall-sim-win}
+        \end{figure}
+
+        Program udostêpnia wiele konfigurowalnych opcji odpowiadaj¹cych za dzia³anie symulacji i jej wizualizacji dostêpnych za poœrednictwem \emph{panelu opcji}:
+
+        \begin{itemize}
+            \item \textbf{Opcje t³a} - wybór danych wizualizowanych w tle symulacji; do wyboru jedna wartoœæ z: \emph{brak}, \emph{gradient Social Force}, \emph{rozk³ad odwiedzin danych komórek centrum handlowego}, \emph{rozk³ad algorytmów ruchu}, \emph{rozk³ad stref specjalnych centrum handlowego}.
+            \item \textbf{Opcje celu} - opcje wizualizacji celu podró¿y agentów; do wyboru jedna wartoœæ z: \emph{brak}, \emph{wektor najbli¿szego celu wybranego agenta}, \emph{aktualna œcie¿ka wybranego agenta}, \emph{wektory najbli¿szego celu wszystkich agentów}.
+            \item \textbf{Szybkoœæ symulacji} - pasek wyboru szybkoœci symulacji (iloœæ milisekund na krok symulacji); wartoœci z przedzia³u 50 do 1000 milisekund.
+            \item \textbf{Opcje nagrywania} - opcje odpowiadaj¹ce za nagrywanie przepiegu symulacji; obecnie dostêpna jest tylko konfiguracja iloœci kroków na klatkê filmu (\emph{spf}).
+        \end{itemize}
+
+        \noindent
+        ...oraz \emph{paska menu}:
+
+        \begin{itemize}
+            \item \textbf{Seed} - opcje odpowiadaj¹ce za \emph{ziarno} symulacji umo¿liwiaj¹ce kontrolowanie powtarzalnoœci wyników.
+        \end{itemize}
+
+        W celu u³atwienia pozyskiwania danych do póŸniejszej analizy program udostêpnia zak³adkê \emph{Properties} generuj¹c¹ dynamicznie podgl¹d parametrów wybranego agenta oraz mo¿liwoœæ nagrania przebiegu symulacji za pomoc¹ biblioteki \textbf{Monte Media Library} - przebieg symulacji zapisywany jest w g³ówym katalogu programu w formacie \emph{.avi}.
+
+\newpage
+    \section{Symulacja i analiza wyników}
+    \label{sec:sim}
+
+    W celu przetestowania poprawnoœci modelu i dzia³ania programu zdecydowano siê przeprowadziæ symulacjê lokalnego centrum handlowego - \href{http://www.galeria-krakowska.pl/}{\emph{Galerii Krakowskiej}}. Przygotowano mapy parteru centrum zaprezentowane na poni¿szej ilustracji:
+
+    \begin{figure}[H]
+      \centering
+      \includegraphics[scale=0.5]{./img/GaleriaKrakowska.pdf}
+      \caption{Mapy parteru popularnej \emph{Galerii Krakowskiej}.}
+      \label{fig:gk-maps}
+    \end{figure}
+
+    \noindent
+    Ze wzglêdu na brak dostêpu do danych i dynamiczne zmiany faktycznych rozk³adów sklepowych pó³ek i alejek mapy parteru symulowanego centrum handlowego, przedstawione na rysunku \ref{fig:gk-maps}, zawieraj¹ przyk³adowe, proste uk³ady pó³ek sklepowych - wizjê autorów projektu. \\
+
+        \subsection{Kalibracja i walidacja parametrów symulacji}
+        \label{sec:calibration}
+
+        W celu kalibracji i walidacji parametrów modelu pos³u¿ono siê obserwacjami przeprowadzonymi w symulowanym centrum handlowym w wolnym czasie. W zwi¹zku z faktem, i¿ model zastosowany w tej pracy niewiele parametrów wymagaj¹cych kalibracji, z których wiêkszoœæ jest trudna, b¹dŸ niemo¿liwa do oszacowania bez du¿ej porcji danych statystycznych kalibracjê przeprowadzono w du¿ej mierze ``metod¹ prób i b³êdów'' w oparciu o dane zebrane z obserwacji. Uda³o siê w ten sposób zidentyfikowaæ trzy typy agentów odwiedzaj¹cych centrum handlowe (dynamiczny, przeciêtny i ``pensjonariusz''), które ró¿ni¹ siê maksymaln¹ prêdkoœci¹ poruszania, chêci¹ do omijania innych agentów, czy wytrwa³oœci¹ w robieniu zakupów. \\
+
+        Po skalibrowaniu parametrów dotycz¹cych zachowania agentów przyst¹piono do kalibracji parametrów centrum handlowego, wyra¿onych w wiêkszoœci przez \hyperref[fig:mall-features]{mapê rozk³adu stref specjalnych} centrum handlowego, która jest wykorzystywana przez algorytm wyszukiwania œcie¿ek. Kalibracja przebiega³a ze wzglêdu na dwa kluczowe aspekty symulacji - czas generowania œcie¿ek oraz zachodzenie abstrakcyjnych zjawisk opisanych w nastêpnej sekcji. Kalibracjê ponownie przeprowadzono w oparciu o dane pochodz¹ce z w³asnych obserwacji i ``zrdrowego rozs¹dku'', niestety administracja \emph{Galerii Krakowskiej} nie udzieli³a autorom pracy dostêpu do istotnych danych, które umo¿liwi³yby stworzenie lepszej mapy rozk³adu stref specjalnych, która dok³adniej oddawa³aby rzeczywisty charakter \emph{Galerii Krakowskiej}. \\
+
+        Walidacjê opracowanych parametrów przeprowadzono konfrontuj¹c wyniki symulacji z rzeczywistymi doœwiadczeniami wyniesionymi z symulowanego centrum handlowego. Porównanie wyników symulacji do poczynionych obserwacji rzeczywistego zachowania ludzi zawarto w nastêpnych sekcjach.
+
+        \subsection{Uzyskane wyniki iloœciowe i jakoœciowe}
+        \label{sec:results}
+
+        Uzyskane wyniki spe³niaj¹ wszystkie za³o¿enia postawione w sekcjach \ref{sec:mall-model} i \ref{sec:move-model} i s¹ bardzo zbli¿one do rzeczywistych zachowañ ludzi w centrum handlowym. Agenci poruszaj¹ siê zgodnie z wytyczonymi œcie¿kami, które dobierane s¹ w taki sposób, by dany agent odwiedzi³ wiele sklepów w centrum handlowym:
+
+        \begin{figure}[H]
+          \centering
+          \includegraphics[scale=0.7]{./img/route.png}
+          \caption{Wybrana przez algorytm œcie¿ka prowadz¹ca agenta po centrum handlowym.}
+          \label{fig:res-route}
+        \end{figure}
+
+\noindent
+Modeluje to strategiczne plany ludzi, którzy odwiedzaj¹c centrum handlowe przewa¿nie planuj¹ spêdziæ tam wiêcej czasu. Opisany w sekcji \ref{sec:path-finding} algorytm wyboru œcie¿ek prowadzi do powstania realistycznego routingu ludzi w centrum handlowym:
+
+        \begin{figure}[H]
+          \centering
+          \includegraphics[scale=0.7]{./img/routing.png}
+          \caption{Realistyczny routing agentów w centrum handlowym.}
+          \label{fig:res-routing}
+        \end{figure}
+
+\noindent
+Spontanicznie tworz¹ siê pasy ruchu, którymi ludzie pod¹¿aj¹ do celu swojej podró¿y:
+
+        \begin{figure}[H]
+          \centering
+          \includegraphics[scale=0.7]{./img/lanes.png}
+          \caption{Samoistne tworzenie siê pasów ruchu.}
+          \label{fig:res-lanes}
+        \end{figure}
+
+\noindent
+Zupe³nie jak w prawdziwym centrum handlowym, agenci preferuj¹ poruszanie siê œrodkiem korytarza w miarê mo¿liwoœci, o czym œwiadczy wiêksza wartoœæ ``temperatury'' na œrodku poni¿szej ilustracji:
+
+        \begin{figure}[H]
+          \centering
+          \includegraphics[scale=0.7]{./img/middle.png}
+          \caption{Agenci preferuj¹cy œrodek korytarza.}
+          \label{fig:res-middle}
+        \end{figure}
+
+\noindent
+Takie zachowanie prowadzi do tworzenia siê skupisk ludzi (\emph{ang. flocking}), co wp³ywa na preferencje odleg³oœciowe zaanga¿owanych agentów i zmianê ich gradientów \emph{Social Force}. Zmiana ta poci¹ga za sob¹ roz³adowanie zatoru - model osi¹ga stabilnoœæ automatycznie siê reguluj¹c:
+
+        \begin{figure}[H]
+          \centering
+          \includegraphics[scale=0.7]{./img/bottleneck.png}
+          \caption{Samoistne tworzenie siê zgrupowañ ludzi - \emph{flocking}.}
+          \label{fig:res-bottleneck}
+        \end{figure}
+
+Równie interesuj¹ce jest powstawanie abstrakcyjnych zachowañ wymienionych w sekcji \ref{sec:mall-model}. Algorytm \hyperref[sec:tactical]{fazy taktycznej} uwzglêdnia \emph{atrakcjê} agentów do ró¿nych, interesuj¹cych stref centrum handlowego, co zaprezentowano na rysunku \ref{fig:res-attraction}.
+
+        \begin{figure}[H]
+          \centering
+          \includegraphics[scale=0.7]{./img/attraction.png}
+          \caption{Uwzglêdnianie miejsc przyci¹gaj¹cych uwagê w œcie¿ce agenta.}
+          \label{fig:res-attraction}
+        \end{figure}
+
+\noindent
+Obserwowaæ mo¿na naturalne zachowania, takie jak zatrzymanie siê przed oknem wystawowym, czêsto obserwowane w prawdziwych centrach handlowych:
+
+        \begin{figure}[H]
+          \centering
+          \includegraphics[scale=0.7]{./img/attraction2.png}
+          \caption{Charakterystyczne zboczenie z trasy celem osi¹gniêcia atraktora.}
+          \label{fig:res-attraction-2}
+        \end{figure}
+
+\noindent
+Agenci bardzo chêtnie grupuj¹ siê by obserwowaæ ró¿ne ciekawe zjawiska obecne w symulowanym centrum handlowym - wszystko dziêki umieszczonym tam \hyperref[sec:attractors]{atraktorom}:
+
+        \begin{figure}[H]
+          \centering
+          \includegraphics[scale=0.7]{./img/attraction3.png}
+          \caption{Agenci w obrêbie atraktora.}
+          \label{fig:res-attraction-3}
+        \end{figure}
+
+\hyperref[sec:queues]{Kolejki}, podobnie jak atraktory, brane s¹ pod uwagê ju¿ w fazie taktycznej dzia³ania algorytmu - agenci dokonuj¹cy zakupu podchodz¹ do kasy i oczekuj¹ na obs³ugê imituj¹c zachowanie prawdziwych ludzi:
+
+        \begin{figure}[H]
+          \centering
+          \includegraphics[scale=0.7]{./img/queueing.png}
+          \caption{Uwzglêdnianie sklepowych kas i kolejek w œcie¿ce agenta.}
+          \label{fig:res-queueing}
+        \end{figure}
+
+\noindent
+Zachowanie to uda³o siê osi¹gn¹æ pomimo dzia³ania algorytmu \hyperref[sec:operational]{Social Force}, który nakazuje agentom trzymanie dystansu do siebie nawzajem:
+
+        \begin{figure}[H]
+          \centering
+          \includegraphics[scale=0.7]{./img/queueing2.png}
+          \caption{Agenci oczekuj¹cy na swoj¹ kolej.}
+          \label{fig:res-queueing-2}
+        \end{figure}
+
+W podobny sposób osi¹gniêto \hyperref[sec:holders]{wstrzymanie agentów} - symuluj¹ce wszelkiego rodzaju odpoczynki i czasy oczekiwania zdarzaj¹ce siê w centrum handlowym:
+
+        \begin{figure}[H]
+          \centering
+          \includegraphics[scale=0.7]{./img/hold.png}
+          \caption{Agenci odpoczywaj¹cy na ³awce (w obrêbie opóŸniacza).}
+          \label{fig:res-hold}
+        \end{figure}
+
+Interesuj¹cym jest fakt, i¿ nawet pomimo zastosowania skomplikowanych algorytmów routingu i wyszukiwania œcie¿ek uda³o siê otrzymaæ niemal stu procentowe pokrycie centrum handlowego. Agenci bezproblemowo osi¹gaj¹ wszystkie jego pomieszczenia, co doskonale oddaje charakterystyki prawdziwego centrum handlowego i zachowanie ludzi tam obecnych.
+
+        \begin{figure}[H]
+          \centering
+          \includegraphics[scale=0.7]{./img/coverage.png}
+          \caption{Pokrycie centrum handlowego.}
+          \label{fig:res-coverage}
+        \end{figure}
+
+
+Dodatkowo do dokumentacji projektu za³¹czono kilka filmów pokazuj¹cych dzia³anie symulacji i powstawanie wy¿ej opisanych zachowañ:
+
+        \begin{itemize}
+          \item \textbf{overview.avi} - Prezentacja ró¿nych aspektów wizualizacji symulacji: zbli¿anie, oddalanie, przesuwanie planu galerii, rozk³ad pola potencja³u, mapa ``temperatury'' (licznik odwiedzin pól).
+
+          \item \textbf{movement.avi} - Przyk³ad formowania siê ``pasów ruchu'' na prostych odcinkach korytarza (górna czêœæ animacji) dziêki u¿yciu algorytmu Ped-4. Problemy ze wspó³istnieniem obok siebie algorytmów Ped-4 i Social Force (patrz: ruch agentów po wygiêtych w ³uch korytarzach) - piesi zawracaj¹ b¹dŸ ``krêc¹ siê w kó³ko'' powoduj¹c zator.
+
+          \item \textbf{queue\_attractor.avi} - Dzia³anie kolejek (po prawej stronie) oraz atraktorów (w œrodku i po lewej stronie) - agenci chêtnie zbli¿aj¹ do takich stref. Wejœcie na atraktor albo kolejkê powoduje wstrzymanie agenta na okreœlony czas.
+
+          \item \textbf{social\_force.avi} - Przyk³ad omijania innych klientów z uwzglêdnieniem stref komfortu dziêki zastosowaniu algorytmu Social Force.
+
+          \item \textbf{visits.avi} - Animacja pokazuj¹ca przep³w ludzi w galerii handlowej. WyraŸnie widaæ du¿y, skoncentrowany ruch po korytarzach oraz niewielki i rozproszony ruch po obszarach sklepów.
+
+          \item \textbf{wall\_error.avi} - Przyk³ad b³êdów wyznaczania œcie¿ki skutkuj¹cy niemo¿liwoœci¹ osi¹gniêcia wyznaczonego celu z powodu natrafienia na œcianê. Przyczyn¹ jest przedwczesne uznanie wczeœniejszego celu (le¿¹cego w tym przypadku na szczycie œciany) za osi¹gniêty oraz wyznaczenie kolejnego celu w miejscu niewidocznym z pozycji agenta w chwili uznania poprzednieg celu za osi¹gniêty.
+        \end{itemize}
+
+        \subsection{Wyniki symulacji a rzeczywistoœæ}
+        \label{sec:sim-vs-reality}
+Wyniki symulacji doœæ dobrze oddaj¹ charakter zjawisk obserwowanych w rzeczywistej galerii handlowej.
+
+W korytarzach obserwujemy formowanie siê ``pasów ruchu'' - ludzie staraj¹ siê iœæ jeden za drugim w kolumnie, próbuj¹ wyprzedzaæ siê tylko wtedy, gdy nie nadchodzi nikt z naprzeciwka. We wnêtrzach sklepów dzieje siê na odwrót - brak poœpiechu sprawia, ¿e klienci wiêksz¹ wagê przywi¹zuj¹ do nie naruszania swoich stref komfortu.
+
+Na podgl¹dzie odwiedzonych p³ytek widzimy, ¿e klienci preferuj¹ ruch œrodkiem korytarzy, jednak gdy zajdzie taka koniecznoœæ korzystaj¹ z ca³ej jego dostêpnej szerokoœci.
+
+W przypadku sklepów rozk³ad odwiedzanych miejsc jest znacznie bardziej równomierny, czego równie¿ mo¿na by³o oczekiwaæ - wewn¹trz sklepu (o ile nie jest to dyskont spo¿ywczy) klient porozgl¹da siê i zapoznaje z ofert¹ sklepu, a uwagê ró¿nych osób przyci¹gaj¹ ró¿ne produkty. Warto równie¿ zauwa¿yæ, ¿e w przypadku niewielkich sklepów (typu: 101 drobiazgów, Åšwiat Kawy i Herbaty) stosunkowo niewielu klientów wchodzi g³êbiej do œrodka - wiêkszoœæ po wejœciu rozgl¹da siê chwilê i wychodzi. Zachowanie takie jest czêsto obserwowane w galeriach handlowych.
+
+Analiza wyników symulacji wykaza³a równie¿ koniecznoœæ dalszej kalibracji (oraz ewentualnie czêœciowej zmiany metodologii) procesu wyznaczania œcie¿ek. Na chwilê obecn¹ nie uda³o siê w pe³ni wyeliminowaæ niekorzystnego zjawiska ``forsowania œciany'' przez agentów spowodowanego równoczesnym wyst¹pieniem dwóch zdarzeñ: przedwczesnym uznaniem celu za osi¹gniêty oraz wyznaczeniu kolejnego celu w miejscu niewidocznym z aktualnej pozycji agenta. Przyk³ad takiej sytuacji pokazano poni¿ej: jeœli agent uzna punkt $A$ za osi¹gniêty jeszcze przed ominiêciem œciany, wektor celu prow¹dz¹cy do punktu $B$ spowoduje ruch agenta wzd³ó¿ œciany i próbê jej póŸniejszego ``sforsowania''.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=0.7]{./img/wallsmasher.png}
+  \caption{Forsowanie œciany przez wybranego agenta.}
+  \label{fig:bug-wallsmasher}
+\end{figure}
+
+\newpage
+    \begin{thebibliography}{9}
+        \label{sec:refs}
+
+        \bibitem[W¹s, Gudowski, Matuszyk 2006]{refs:social-distances-1} - Social Distances Model of Pedestrian Dynamics
+        \bibitem[Karakayali 2009]{refs:social-distances-2} - Social Distance and affective orientation
+        \bibitem[Blue, Adler 2000]{refs:4-way-movement} - Modelling Four Directional Pedestriam Movements
+        \bibitem[Blue, Adler 2001]{refs:cellular-movement} - Cellular automata microsimulation for modeling bi-directional pedestrian walkways
+        \bibitem[Bitgood, Dukes 2005]{refs:movement-economy} - Economy of Movement and Pedestrian Choice Point Behavior in Shopping Malls
+        \bibitem[Borgers, Timmermans 1986]{refs:route-choice-1} - A Model of Pedestrian Route Choice and Demand for Retail Facilities within Inner-City Shopping Areas
+        \bibitem[Borgers, Timmermans 1986]{refs:route-choice-2} - City centre entry points, store location, patterns and pedestrian route choice behaviour: a microlevel simulation model
+        \bibitem[Borgers, Timmermans 2005]{refs:pedestrian-behaviour-1} - Modelling pedestrian behaviour in downtown shopping areas
+        \bibitem[Kitazawa, Batty 2004]{refs:pedestrian-behaviour-2} - Pedestrian Behaviour Modelling - An Application to Retail Movements using a Genetic Algorithm
+        \bibitem[Zacharias 2000]{refs:real-data-1} - Shopping behavior at Alexis-Nihon Plaza in Montreal
+        \bibitem[Rauh, Schenk, SchrÅ‘dl 2011]{refs:real-data-2} - The Simulated consumer - an agent-based approach to shopping behaviour
+        \bibitem[Helbing 1992]{refs:fluid-dynamics} - A Fluid Dynamic Model for the Movement of Pedestrians
+    \end{thebibliography}
+\end{document}

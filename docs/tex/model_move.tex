@@ -1,0 +1,83 @@
+\newpage
+    \section{Model ruchu ludzi}
+    \label{sec:move-model}
+
+\noindent
+W zastosowanym algorytmie mo¿na wyszczególnieæ dwie g³ówne, wzajemnie od siebie zale¿ne fazy - fazê \hyperref[sec:tactical]{taktyczn¹} oraz fazê \hyperref[sec:operational]{operacyjn¹}, których interakcjê przestawiono na poni¿szym, uproszczonym diagramie.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[scale=0.55]{./img/ActorActivity.pdf}
+        \caption{Diagram aktywnoœci agentów.}
+        \label{fig:actor-activity}
+    \end{figure}
+
+Algorytm rozpoczyna dzia³anie od wygenerowania agenta na podstawie wczeœniej zdefiniowanych archetypów.
+Dla ka¿dego agenta wybierana jest wstêpna lista miejsc docelowych, które zostan¹ przez niego odwiedzone w czasie dzia³ania symulacji, oraz obliczana jest optymalna œcie¿ka ³¹cz¹ca wybrane w poprzednim kroku miejsca docelowe. Algorytm nastêpnie modyfikuje œcie¿kê w oparciu o mapê rozk³adu stref specjalnych centrum handlowego by lepiej modelowaæ faktyczne zamiary danego agenta. Faza taktyczna koñczy siê wybraniem niewielkiej iloœci punktów poœrednich le¿¹cych na wyznaczonej œcie¿ce.
+
+Po wygenerowaniu niezbêdnych danych taktycznych dla ka¿dego agenta algorytm przechodzi do fazy operacyjnej, która odpowiada za w³aœciwe przemieszczanie agentów. Faza ta zachodzi w lokalnym otoczeniu ka¿dego agenta i odpowiada za zachowania takie jak omijanie przeszkód, grupowanie siê i pod¹¿anie za obran¹ œcie¿k¹.
+Algorytm na podstawie bezpoœredniego otoczenia agenta oraz metadanych dotycz¹cych obecnego celu jego podró¿y podejmuje decyzje o mo¿liwoœci wykonania ruchu, lub w przypadku skrajnym o modyfikacji wybranej œcie¿ki prowadz¹cej do celu, czy nawet zmianie aktualnego celu podró¿y.
+W przypadku osi¹gniêcia miejsca docelowego algorytm przechodzi do rozpatrywania nastêpnego miejsca docelowego, lub w tryb ``b³¹dzenia'', gdy osi¹gniêto ju¿ wszystkie wyznaczone cele.
+
+\newpage
+        \subsection{Faza taktyczna}
+        \label{sec:tactical}
+
+        \begin{figure}[H]
+            \centering
+            \includegraphics[scale=0.3]{./img/Tactical.pdf}
+            \caption{Zakres operacji taktycznej czêœci modelu ruchu.}
+            \label{fig:tactical}
+        \end{figure}
+
+\noindent
+Faza taktyczna zachodzi globalnie dla ka¿dego agenta bez uwzglêdnienia jego lokalnego otoczenia, innych agentów, czy fizycznych w³aœciwoœci centrum handlowego - nie jest istotnym, czy dany korytarz zosta³ zablokowany przez grupê ludzi i nie umo¿liwia przejœcia. Faza ta modeluje abstrakcyjne zamiary agenta i jej celem jest przede wszystkim wybór listy miejsc docelowych oraz wyznaczenie dróg do nich prowadz¹cych. \\
+
+Osi¹gniêto to dziêki \hyperref[sec:path-finding]{algorytmowi znajdowania œcie¿ek A*} oraz \hyperref[sec:mall-impl]{mapie rozk³adu stref specjalnych} centrum handlowego, która jest wykorzystywana jako dodatkowa heurystyka A* - specjalne strefy centrum handlowego modyfikuj¹ estymowan¹ ocenê danego punktu wyznaczanej œcie¿ki nadaj¹c jej po¿¹dany kszta³t i prowadz¹c j¹ w odpowiedni sposób do celu podró¿y. \\
+
+Przy wyznaczaniu œcie¿ek pod uwagê brane s¹ \hyperref[sec:attractors]{atraktory}, \hyperref[sec:queues]{kolejki} i \hyperref[sec:entrance-exits]{przejœcia}, które algorytm stara siê uwzglêdniæ za pomoc¹ opisanej heurystyki.
+
+\newpage
+        \subsection{Faza operacyjna}
+        \label{sec:operational}
+
+        \begin{figure}[H]
+            \centering
+            \includegraphics[scale=0.3]{./img/Operative.pdf}
+            \caption{Zakres dzia³ania operacyjnej czêœci modelu ruchu.}
+            \label{fig:operational}
+        \end{figure}
+
+        % TODO Potrzeba wiêkszego opisu, który bardziej zag³êbia siê w wybrany algorytm operacyjny.
+
+\noindent
+Faza operacyjna zachodzi w lokalnym otoczeniu ka¿dego agenta, a jej celem jest wykonanie w³aœciwego ruchu agenta. Faza ta jest odpowiedzialna za unikanie kolizji i omijanie przeszkód. Pod uwagê brani s¹ inni agenci oraz metadane dotycz¹ce drogi prowadz¹cej do aktualnego celu podró¿y wygenerowane w taktyczniej fazie dzia³ania algorytmu. W implementacji fazy operacyjnej wykorzystano zmodyfikowane algorytmy \hyperref[sec:movement-impl]{Ped-4} i \hyperref[sec:social-force-impl]{Social-Force}. \\
+
+Oryginalny \textbf{Ped-4} zosta³ zaproponowany w pracy \textit{Modeling Four Directional Pedestrian Movements} (\cite{refs:4-way-movement}). Poniewa¿ prowadzi on do samoorganizowania siê pieszych w kolumny, w symulacji galerii u¿ywany jest w odniesieniu do przestrzeni, po których ruch odbywa siê w sposób uporz¹dkowany (tj. do korytarzy, alejek oraz niewielkich skrzy¿owañ). \\
+
+\noindent
+Algorytm sk³ada siê z nastêpuj¹cych etapów:
+\begin{enumerate}
+\item \textbf{Dostosowanie kierunku ruchu} \
+    - gdy k¹t miêdzy kierunkiem ruchu, a kierunkiem do celu przekroczy wartoœæ graniczn¹, pieszy skrêca w stronê celu.
+\item \textbf{Zmiana pasa ruchu} \
+    - obliczana jest iloœæ wolnych pól dla obecnie zajmowanego pasa i dla pasów s¹siednich. Pieszy zajmuje ten pas, który na chwilê obecn¹ umo¿liwia mu przesuniêcie siê o najwiêksz¹ iloœæ pól do przodu. Przy wyborze preferowany jest dotychczasowy pas. W przypadku, gdy obecnie zajmowany pas nie jest ``czysty'' (tzn. z naprzeciwka idzie inny pieszy), aby uniknaæ kolizji pieszy stara siê ``schowaæ'' za inn¹ osob¹ id¹c¹ w tym samym co on kierunku.
+\item \textbf{Krok naprzód} \
+    - w przypadku, gdy pole bezpoœrednio przed pieszym (zgodnie z kierunkiem ruchu) jest wolne - próba zajêcia go. Jeœli nie jest to mo¿liwe - próba dokonania zamiany miejsca z innym pieszym. Wymiana odzwierciedla sytuacjê, gdy piesi ``skrêcaj¹ tu³owie'', by ``przecisn¹æ siê'' obok siebie. Etap \textit{krok naprzód} powtarzany jest wielokrotnie, dopóki nie skoñcz¹ siê ``punkty ruchu'' pieszego.
+\end{enumerate}
+
+\newpage
+\noindent
+Poni¿ej zamieszczono preferowan¹ kolejnoœæ dokonywania zamian:
+
+\begin{enumerate}
+\item miêdzy pieszymi id¹cymi w przeciwnych kierunkach na tym samym pasie
+\item miêdzy pieszymi id¹cymi w przeciwnych kierunkach na s¹siednich pasach (na polach po przek¹tnej)
+\item miêdzy pieszymi id¹cymi w kierunkach prostopad³ych wzglêdem siebie (na polach po przek¹tnej)
+\item miêdzy pieszymi id¹cymi w kierunkach prostopad³ych wzglêdem siebie (jeden ``tarasuje'' drugiemu drogê)
+\end{enumerate}
+
+\noindent
+Pieszy mo¿e wybraæ dan¹ mo¿liwoœæ tylko wtedy, gdy jego ``partner'' do zamiany nie wykona³ jeszcze swojego ruchu. Jeœli dana wymiana nie dojdzie do skutku, próbowana jest kolejna opcja z listy (znajduje to potwierdzenie w obserwacjach - w sytuacji du¿ego t³oku ludzie chêtniej dokonuj¹ takich manewrów). \\
+
+Algorytm \textbf{Social Force} opiera siê na obserwacji, ¿e ka¿dy cz³owiek posiada wokó³ siebie (g³ównie przed sob¹) tzw. \textit{strefê komfortu}, w której niechêtnie widzi osoby postronne. Po zsumowaniu stref komfortu wszystkich agentów otrzymuje siê swoisty rozk³ad potencja³u, na podstawie którego wyznaczany jest ich dalszy kierunek ruchu. Zasada, wed³ug której odbywa siê ruch, jest prosta - dojœæ do celu po polach o jak najmniejszym potencjale. Jeœli w danym momencie brak jest dostêpnych pól, pieszy ``drepcze'' w miejscu w oczekiwaniu na zwolnienie siê któregoœ z nich. Algorytm \textit{Social Force} s³u¿y g³ównie do modelowania miejsc, w których ludzie ``wa³êsaj¹ siê'', jak place czy wnêtrza sklepów.

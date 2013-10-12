@@ -1,0 +1,65 @@
+\newpage
+    \section{Model centrum handlowego}
+    \label{sec:mall-model}
+
+\noindent
+Zgodnie z metod¹ \emph{Divide and Conquer} zaproponowan¹ we \hyperref[sec:intro]{wprowadzeniu}, zdecydowano siê na dekompozycjê problemu modelowania ruchu ludzi w centrum handlowym na elementarne, abstrakcyjne zachowania oraz, ze wzglêdu na cele poszczególnych agentów i sposoby ich osi¹gania, na globalne i lokalne planowanie trasy podró¿y, co zawarto na rysunku \ref{fig:overview}.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[scale=0.3]{./img/Overview.pdf}
+        \caption{Zastosowana dekompozycja problemu.}
+        \label{fig:overview}
+    \end{figure}
+
+Model centrum handlowego przewiduje istnienie specjalnych stref, wewn¹trz których algorytmy odpowiedzialne za poruszanie agentów s¹ modyfikowane lub zastêpowane celem modelowania dobrze zdefiniowanych elementarnych zachowañ, takich jak \emph{kolejkowanie}, czy \emph{grupowanie siê}. W wyniku obserwacji stwierdzono istnienie czterech rodzajów stref specjalnych - strefy przyci¹gania uwagi (atraktory), kolejki, przejœcia i miejsca oczekiwania (opóŸniacze).
+
+    \subsection{Atraktory}
+    \label{sec:attractors}
+
+Atraktor jest specjaln¹ stref¹ przyci¹gaj¹c¹ uwagê agentów poruszaj¹cych siê po centrum handlowym. Atraktor ma za zadanie modelowaæ obecnoœæ przedmiotu lub zjawiska, które przykuwa uwagê ludzi na terenie centrum handlowego, a wynikiem jego dzia³ania jest spontaniczne powstawanie skupisk ludzi - \emph{grupowanie siê}.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[scale=0.4]{./img/Crowding.pdf}
+        \caption{Grupowanie siê agentów w obrêbie atraktora.}
+        \label{fig:crowding}
+    \end{figure}
+
+Atraktory ró¿ni¹ siê miêdzy sob¹ typami - atraktory ró¿nych typów przyci¹gaj¹ inne rodzaje agentów, co modeluje ró¿nice w preferencjach ludzi przebywaj¹cych w centrum handlowym.
+
+    \subsection{Kolejki}
+    \label{sec:queues}
+
+Drugim istotnym z punktu widzenia modelu centrum handlowego typem strefy specjalnej jest strefa kolejki. Zadaniem kolejki jest modelowanie zjawiska \emph{œcis³ego kolejkowania siê} ludzi, na przyk³ad przy kasie sklepowej, lub na stopniach eskalatora, co nie wynika z ogólnego modelu ruchu.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[scale=0.4]{./img/Queueing.pdf}
+        \caption{Kolejkowanie siê ludzi przy kasie sklepowej z zaznaczon¹ kolejk¹ œcis³¹.}
+        \label{fig:queueing}
+    \end{figure}
+
+    \subsection{Przejœcia/wejœcia/wyjœcia}
+    \label{sec:entrance-exits}
+
+Strefy przejœæ podobnie jak koleki modyfikuj¹ preferencje odleg³oœciowe agentów i prow¹dz¹ do zmniejszenia odleg³oœci miêdzy nimi, co nie wynika z ogólnego modelu ruchu. Przejœcia, jak sama nazwa wskazuje, modeluj¹ wszelkiego rodzaju wejœcia, wyjœcia i przejœcia prowadz¹ce miêdzy piêtrami centrum handlowego.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[scale=0.4]{./img/EntranceExits.pdf}
+        \caption{Poruszanie siê agenta po eskalatorze pomiêdzy piêtrami centrum handlowego.}
+        \label{fig:passing-through}
+    \end{figure}
+
+    \subsection{Miejsca oczekiwania (OpóŸniacze)}
+    \label{sec:holders}
+
+Ostatnim istotnym typem strefy specjalnej jest miejsce oczekiwania, modeluj¹ce wszelkiego rodzaju miejsca spêdzania czasu w bezruchu.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[scale=0.4]{./img/Held.pdf}
+        \caption{Agenci oczekuj¹cy koñca œwiata.}
+        \label{fig:held-down}
+    \end{figure}
