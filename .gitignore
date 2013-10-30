@@ -18,3 +18,7 @@ docs/tex/*.blg
 docs/html
 /out.avi
 /bin
+
+# Settings
+/.pmd
+*.prefs

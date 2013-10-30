@@ -265,7 +265,7 @@ public class Simulation extends Observable implements Runnable {
 
 			clearAgentsOnExits();
 
-			assess();
+			assessPed4();
 		}
 
 		nAgentSuccesses += targetsReached;
@@ -285,11 +285,11 @@ public class Simulation extends Observable implements Runnable {
 		}
 	}
 
-	private void assess() {
+	private void assessPed4() {
 		Board board = mall.getBoard();
 		Point p = new Point();
 		// TODO: enum map (ile kratek danego typu)
-		
+
 		int left = 0;
 		int right = 0;
 		int none = 0;
@@ -297,23 +297,40 @@ public class Simulation extends Observable implements Runnable {
 		for (int x = 0; x < board.getWidth(); x++)
 			for (int y = 0; y < board.getHeight(); y++) {
 				p.setLocation(x, y);
-				
+
 				LaneDirection dir = assessRow(y, x);
-				
+
 				switch (dir) {
-				case EAST: right++; break;
-				case WEST: left++; break;
-				case NONE: none++; break;
+				case EAST:
+					right++;
+					break;
+				case WEST:
+					left++;
+					break;
+				case NONE:
+					none++;
+					break;
 				default:
 					break;
 				}
-				
+
 				board.getCell(p).setLaneDirection(dir);
 			}
-		
-		double frac = (left+right)/(double)(left+right+none)*100.0;
-		BigDecimal bd = new BigDecimal(frac).setScale(2, RoundingMode.HALF_EVEN);
-		MallSim.getFrame().getSummaryTable().setParamValue(Param.PERC_OF_FIELDS_AS_LANES, bd.doubleValue());
+
+		double all = left + right + none;
+
+		if (all == 0) {
+			MallSim.getFrame().getSummaryTable()
+					.setParamValue(Param.PERC_OF_FIELDS_AS_LANES, "");
+		} else {
+			double frac = (all - none) / all * 100.0;
+			BigDecimal bd = new BigDecimal(frac).setScale(2,
+					RoundingMode.HALF_EVEN);
+			MallSim.getFrame()
+					.getSummaryTable()
+					.setParamValue(Param.PERC_OF_FIELDS_AS_LANES,
+							bd.doubleValue());
+		}
 	}
 
 	private void clearAgentsOnExits() {
@@ -513,11 +530,5 @@ public class Simulation extends Observable implements Runnable {
 		} else {
 			return LaneDirection.NONE;
 		}
-
-		// System.out.println("density = " + density);
-		// System.out.println("dominantDirection = " + dominantDirection);
-		// System.out.println("varWest = " + varWest);
-		// System.out.println("varEast = " + varEast);
-		// System.exit(0);
 	}
 }

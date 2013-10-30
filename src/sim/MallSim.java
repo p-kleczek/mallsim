@@ -14,13 +14,13 @@ import sim.util.video.VideoRecorder;
 public class MallSim {
 
 	static Thread simThread = null;
-	public static MallFrame frame = null;
 
-	private static Simulation simulation = null;
+	private static VideoRecorder videoRecorder = new AviRecorder();
+	private static Simulation simulation = new Simulation(videoRecorder);
+	public static MallFrame frame = new MallFrame(videoRecorder);
 
 	static boolean isSuspended = false;
 
-	private static VideoRecorder videoRecorder = new AviRecorder();
 
 	/**
 	 * Launch the application.
@@ -36,7 +36,6 @@ public class MallSim {
 					e.printStackTrace();
 				}
 
-				prepare();
 				runSimulation();
 			}
 		});
@@ -46,26 +45,23 @@ public class MallSim {
 		return frame;
 	}
 
-	private static void prepare() {
-		simulation = new Simulation(videoRecorder);
-		Mall mall = ResourceManager.loadShoppingMall("ped4-test");
+	public static void runSimulation() {
+		Mall mall = ResourceManager.loadShoppingMall("sd-test");
 		simulation.setMall(mall);
 
-		frame = new MallFrame(simulation.getMall(), videoRecorder);
+		frame.setMall(simulation.getMall());
 		frame.setVisible(true);
 
 		videoRecorder.setSource(frame);
-	}
 
-	/**
-	 * Testuje działanie algotymów ruchu.
-	 */
-	public static void runSimulation() {
+		
 		simulation.addObserver(frame.getBoard());
 
 		if (simThread != null)
 			simThread.stop();
+		
 		simThread = new Thread(simulation);
+		
 		simThread.start();
 
 		if (isSuspended)

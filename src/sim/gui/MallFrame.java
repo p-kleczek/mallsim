@@ -61,11 +61,12 @@ public class MallFrame extends JFrame {
 	private SummaryTable summaryTable;
 	private JScrollPane boardScrollPane;
 	private final VideoRecorder videoRecorder;
+	private JPanel boardPanel = new JPanel();
 
 	/**
 	 * Create the frame.
 	 */
-	public MallFrame(Mall mall, VideoRecorder aviRecorder) {
+	public MallFrame(VideoRecorder aviRecorder) {
 		this.videoRecorder = aviRecorder;
 
 		setTitle("MallSim");
@@ -155,17 +156,23 @@ public class MallFrame extends JFrame {
 		splitPane.setRightComponent(tabbedPane);
 
 		createDisplayTab(tabbedPane);
-		createPropertiesTab(mall, splitPane, tabbedPane);
+		createPropertiesTab(splitPane, tabbedPane);
 		createSummaryTab(tabbedPane);
 
-		createBoardPanel(mall, splitPane);
+		createBoardPanel(splitPane);
 
 		tabbedPane.setSelectedIndex(2);
 
 		setDefaults();
 	}
+	
+	public void setMall(Mall mall) {
+		guiBoard = new GUIBoard(mall.getBoard());
+		boardPanel.removeAll();
+		boardPanel.add(guiBoard);
+	}
 
-	private void createBoardPanel(Mall mall, JSplitPane splitPane) {
+	private void createBoardPanel(JSplitPane splitPane) {
 		boardScrollPane = new JScrollPane();
 		boardScrollPane
 				.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
@@ -173,11 +180,7 @@ public class MallFrame extends JFrame {
 				.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
 		splitPane.setLeftComponent(boardScrollPane);
 
-		JPanel boardPanel = new JPanel();
 		boardScrollPane.setViewportView(boardPanel);
-
-		guiBoard = new GUIBoard(mall.getBoard());
-		boardPanel.add(guiBoard);
 	}
 
 	private void createSummaryTab(JTabbedPane tabbedPane) {
@@ -447,7 +450,7 @@ public class MallFrame extends JFrame {
 		}
 	}
 
-	private void createPropertiesTab(Mall mall, JSplitPane splitPane,
+	private void createPropertiesTab(JSplitPane splitPane,
 			JTabbedPane tabbedPane) {
 		JPanel propertiesPanel = new JPanel();
 		tabbedPane.addTab("Properties", null, propertiesPanel, null);
