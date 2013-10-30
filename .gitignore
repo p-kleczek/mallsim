@@ -7,7 +7,8 @@
 
 # Generated docs #
 docs/*.toc
-docs/*.log
+docs/tex/*.log
+docs/tex/*.synctex*
 docs/*.out
 docs/*.aux
 docs/*.lof
