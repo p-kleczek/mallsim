@@ -4,6 +4,7 @@ import java.awt.Point;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Observable;
@@ -13,15 +14,17 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import sim.control.GuiState;
-import sim.control.ResourceManager;
 import sim.control.TacticalWorker;
 import sim.model.Agent;
 import sim.model.Agent.MovementBehavior;
 import sim.model.Board;
 import sim.model.Mall;
-import sim.model.algo.Spawner;
+import sim.model.algo.Ped4.LaneDirection;
+import sim.model.helpers.Direction;
 import sim.model.helpers.Rand;
 import sim.util.AviRecorder;
+
+import com.google.common.collect.Iterables;
 
 public class Simulation extends Observable implements Runnable {
 
@@ -39,12 +42,24 @@ public class Simulation extends Observable implements Runnable {
 	 * Interval (= number of simulation steps) between appearance of a next
 	 * agent.
 	 */
-	private int AGENT_GENERATION_INTERVAL = 2;
+	private int AGENT_GENERATION_INTERVAL = 1;
 
 	/**
 	 * Maximal number of people in a mall as a percentage of accessible area.
 	 */
 	private double MAX_CROWD_FACTOR = 0.15;
+
+	/**
+	 * In this radius it is possible for an agent to mark its current target as
+	 * visited.
+	 */
+	private final int MAX_DISTANCE_FROM_TARGET = 2;
+
+	/**
+	 * Width of an assessment frame is ~10m. (Its height depends corridor's
+	 * breadth)
+	 */
+	private final int ASSESSMENT_FRAME_WIDTH = 15;
 
 	private Mall mall = new Mall();
 	private AviRecorder aviRecorder;
@@ -55,6 +70,8 @@ public class Simulation extends Observable implements Runnable {
 	 * Index of the last step when an agent has been generated.
 	 */
 	private int lastGenerationStep = 0;
+
+	private BlockingQueue<Agent> agentsToCompute = new LinkedBlockingQueue<>(1);
 
 	public Simulation(AviRecorder aviRecorder) {
 		super();
@@ -95,10 +112,8 @@ public class Simulation extends Observable implements Runnable {
 							agent.setInitialDistanceToTarget(curr
 									.distanceSq(agent.getTarget()));
 					} else {
-						// Agent w pobliżu celu?
-						final double maxDistanceFromTarget = 2;
 						double dist = agent.getTarget().distance(curr);
-						if (dist < maxDistanceFromTarget) {
+						if (dist < MAX_DISTANCE_FROM_TARGET) {
 							// TODO: metoda probabilistyczna
 							if (Rand.nextDouble() < 1 / (dist * dist)) {
 								agent.reachTarget();
@@ -122,7 +137,7 @@ public class Simulation extends Observable implements Runnable {
 	/**
 	 * Prepare all agents on the mall.getBoard() for the next step.
 	 */
-	private void prepareAgents() {
+	private void prepareAgentsForNextStep() {
 		Point p = new Point();
 		for (int y = 0; y < mall.getBoard().getHeight(); y++) {
 			for (int x = 0; x < mall.getBoard().getWidth(); x++) {
@@ -210,17 +225,14 @@ public class Simulation extends Observable implements Runnable {
 	@Override
 	public void run() {
 		int nTotalAgents = 0;
-		Board board = mall.getBoard();
 
 		// Number of agents who successfully reached their final destination.
 		int nAgentSuccesses = 0;
 
-		Point p = new Point();
-		for (int y = 0; y < mall.getBoard().getHeight(); y++)
-			for (int x = 0; x < mall.getBoard().getWidth(); x++) {
-				p.setLocation(x, y);
-				mall.getBoard().getCell(p).clearVisitsCounter();
-			}
+		// Ilość agentów, którzy osiągnęli swój cel.
+		int targetsReached = 0;
+
+		prepareBoardForNextStep();
 
 		// ResourceManager.randomize(board, board.getHeight() * board.getWidth()
 		// / 50);
@@ -230,9 +242,6 @@ public class Simulation extends Observable implements Runnable {
 		int nAgentsBegin = mall.getBoard().countAgents();
 		nTotalAgents += nAgentsBegin;
 
-		// Ilość agentów, którzy osiągnęli swój cel.
-		int targetsReached = 0;
-
 		for (stepCounter = 0; stepCounter < STEPS; stepCounter++) {
 			if (stepCounter % aviRecorder.getSimFramesPerAviFrame() == 0)
 				aviRecorder.recordFrame();
@@ -241,23 +250,19 @@ public class Simulation extends Observable implements Runnable {
 
 			targetsReached = computeTargetReached();
 
-			if (targetsReached == nAgentsBegin) {
-				// nAgentSuccesses += nAgentsBegin;
-				// XXX: poniższy warunek został okomentowany na potrzeny testów
-				// break;
-			}
-
 			try {
 				Thread.sleep(GuiState.animationSpeed);
 			} catch (InterruptedException e) {
 			}
 
-			prepareAgents();
+			prepareAgentsForNextStep();
 
 			Map<Agent, Integer> speedPointsLeft = computeMovementPointsLeft();
 			moveAgents(speedPointsLeft);
-			
+
 			clearAgentsOnExits();
+
+			assess();
 		}
 
 		nAgentSuccesses += targetsReached;
@@ -266,14 +271,45 @@ public class Simulation extends Observable implements Runnable {
 				nAgentSuccesses, nTotalAgents, nAgentSuccesses * 100
 						/ nTotalAgents));
 	}
-	
+
+	private void prepareBoardForNextStep() {
+		Point p = new Point();
+		for (int y = 0; y < mall.getBoard().getHeight(); y++) {
+			for (int x = 0; x < mall.getBoard().getWidth(); x++) {
+				p.setLocation(x, y);
+				mall.getBoard().getCell(p).clearVisitsCounter();
+			}
+		}
+	}
+
+	private void assess() {
+		Board board = mall.getBoard();
+		Point p = new Point();
+		// TODO: enum map (ile kratek danego typu)
+
+		for (int x = 0; x < board.getWidth(); x++)
+			for (int y = 0; y < board.getHeight(); y++) {
+				p.setLocation(x, y);
+				board.getCell(p).setLaneDirection(assessRow(y, x));
+			}
+	}
+
 	private void clearAgentsOnExits() {
 		Board board = mall.getBoard();
 		Point p = new Point();
+		Agent agent = null;
 		for (int x = 0; x < board.getWidth(); x++) {
 			for (int y = 0; y < board.getHeight(); y++) {
 				p.setLocation(x, y);
-				if (board.getCell(p).getFeature() instanceof Spawner && board.getCell(p).getAgent() != null)
+				agent = board.getCell(p).getAgent();
+
+				boolean isAgentOnExit = false;// board.getCell(p).getFeature()
+												// instanceof Spawner && agent
+												// != null &&
+												// agent.getTargetCount() == 0;
+				boolean isAgentNearExit = agent != null
+						&& agent.getTargetCount() == 0;
+				if (isAgentOnExit || isAgentNearExit)
 					board.getCell(p).setAgent(null);
 			}
 		}
@@ -316,7 +352,6 @@ public class Simulation extends Observable implements Runnable {
 	}
 
 	private void computePaths(Agent agent) {
-		BlockingQueue<Agent> agentsToCompute = new LinkedBlockingQueue<>(2);
 		try {
 			agentsToCompute.put(agent);
 		} catch (InterruptedException e) {
@@ -334,7 +369,7 @@ public class Simulation extends Observable implements Runnable {
 		boolean isTooEarly = stepCounter - lastGenerationStep < AGENT_GENERATION_INTERVAL;
 		boolean isTooCrowdy = board.countAgents()
 				/ (double) board.getAccessibleFieldCount() >= MAX_CROWD_FACTOR;
-				
+
 		if (isTooEarly || isTooCrowdy)
 			return;
 
@@ -347,7 +382,7 @@ public class Simulation extends Observable implements Runnable {
 				Agent agent = new Agent(MovementBehavior.AVERAGE);
 				board.setAgent(agent, p);
 				computePaths(agent);
-				
+
 				// TODO: wyznaczyć zachowanie agenta
 
 				break;
@@ -355,5 +390,112 @@ public class Simulation extends Observable implements Runnable {
 		}
 
 		lastGenerationStep = stepCounter;
+	}
+
+	private void testAssessment() {
+		Board b = mall.getBoard();
+		b.reset();
+
+		Agent aN = new Agent(MovementBehavior.AVERAGE);
+		Agent aS = new Agent(MovementBehavior.AVERAGE);
+		Agent aW = new Agent(MovementBehavior.AVERAGE);
+		Agent aE = new Agent(MovementBehavior.AVERAGE);
+
+		aN.setDirection(Direction.N);
+		aS.setDirection(Direction.S);
+		aW.setDirection(Direction.W);
+		aE.setDirection(Direction.E);
+
+		// Agent[] agents = new Agent[] {
+		// aE, aE, aE, aW, aE, aN, aE, aW, aE, aE, aE
+		// };
+
+		Agent[] agents = new Agent[] { aW, aW, aS, aW, aW, aS, aW };
+
+		for (int i = 0; i < agents.length; i++) {
+			b.setAgent(new Agent(agents[i]), new Point(i + 2, 1));
+		}
+
+		assessRow(1, 1);
+	}
+
+	private LaneDirection assessRow(int rowIndex, int columnIndex) {
+		int sumOfDirections = 0;
+		int nAgents = 0; // number of agents
+		List<Direction> groupDirections = new ArrayList<>();
+		LinkedList<Integer> groupSizes = new LinkedList<>();
+
+		Point p = new Point();
+
+		int startCol = Math.max(0, columnIndex - ASSESSMENT_FRAME_WIDTH / 2);
+		int endCol = Math.min(mall.getBoard().getWidth(), startCol
+				+ ASSESSMENT_FRAME_WIDTH);
+
+		for (int colInx = startCol; colInx < endCol; colInx++) {
+			p.setLocation(colInx, rowIndex);
+			Agent agent = mall.getBoard().getCell(p).getAgent();
+
+			if (agent == null)
+				continue;
+
+			nAgents++;
+
+			sumOfDirections += agent.getDirection().getVec().x;
+
+			Direction lastGroupDirection = Iterables.getLast(groupDirections,
+					null);
+			boolean isSameDirection = lastGroupDirection == agent
+					.getDirection();
+			boolean bothVertical = lastGroupDirection == null ? false
+					: lastGroupDirection.isVertical()
+							&& agent.getDirection().isVertical();
+			if (!(isSameDirection || bothVertical)) {
+				// start new group
+				groupDirections.add(agent.getDirection());
+				groupSizes.add(0);
+			}
+
+			Integer size = groupSizes.getLast();
+			groupSizes.removeLast();
+			groupSizes.addLast(size + 1);
+		}
+
+		double dominantDirection = sumOfDirections / (double) nAgents;
+
+		double avgGroupSize = 0;
+		for (Integer s : groupSizes)
+			avgGroupSize += s;
+		avgGroupSize /= groupSizes.size();
+
+		double varWest = 0.0;
+		double varEast = 0.0;
+		for (int i = 0; i < groupSizes.size(); i++) {
+			int s = groupSizes.get(i);
+			if (groupDirections.get(i) == Direction.W)
+				varWest += (s - avgGroupSize) * (s - avgGroupSize);
+			else if (groupDirections.get(i) == Direction.E)
+				varEast += (s - avgGroupSize) * (s - avgGroupSize);
+		}
+
+		double density = nAgents / (double) ASSESSMENT_FRAME_WIDTH;
+
+		boolean hasDirection = (density < 0.6)
+				&& (Math.abs(dominantDirection) > 0.6);
+
+		if (groupSizes.isEmpty())
+			return LaneDirection.EMPTY;
+
+		if (hasDirection) {
+			return (dominantDirection > 0.0) ? LaneDirection.EAST
+					: LaneDirection.WEST;
+		} else {
+			return LaneDirection.NONE;
+		}
+
+		// System.out.println("density = " + density);
+		// System.out.println("dominantDirection = " + dominantDirection);
+		// System.out.println("varWest = " + varWest);
+		// System.out.println("varEast = " + varEast);
+		// System.exit(0);
 	}
 }

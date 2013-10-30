@@ -199,12 +199,18 @@ public class MallFrame extends JFrame {
 		rdbtnBgFeatures.addActionListener(Listeners.backgroundListener);
 		backgroundContentPanel.add(rdbtnBgFeatures);
 
+		JRadioButton rdbtnBgLanes = new JRadioButton("lanes");
+		rdbtnBgLanes.setActionCommand(BackgroundPolicy.LANES.name());
+		rdbtnBgLanes.addActionListener(Listeners.backgroundListener);
+		backgroundContentPanel.add(rdbtnBgLanes);
+
 		ButtonGroup backgroundGroup = new ButtonGroup();
 		backgroundGroup.add(rdbtnBgNone);
 		backgroundGroup.add(rdbtnBgVisits);
 		backgroundGroup.add(rdbtnBgSocialField);
 		backgroundGroup.add(rdbtnBgMovement);
 		backgroundGroup.add(rdbtnBgFeatures);
+		backgroundGroup.add(rdbtnBgLanes);
 
 		switch (GuiState.backgroundPolicy) {
 		case NONE:
@@ -221,6 +227,11 @@ public class MallFrame extends JFrame {
 			break;
 		case FEATURES:
 			rdbtnBgFeatures.doClick();
+			break;
+		case LANES:
+			rdbtnBgLanes.doClick();
+			break;
+		default:
 			break;
 		}
 
@@ -373,6 +384,10 @@ public class MallFrame extends JFrame {
 		case ALL:
 			rdbtnAll.doClick();
 			break;
+		case SELECTION_ROUTE:
+			break;
+		default:
+			break;
 		}
 
 		JPanel propertiesPanel = new JPanel();
@@ -406,6 +421,12 @@ public class MallFrame extends JFrame {
 		propertiesPanel.add(propertiesTable, gbc_propertiesTable);
 
 		tabbedPane.setSelectedIndex(0);
+		
+		setDefaults();
+	}
+	
+	private void setDefaults() {
+		GuiState.backgroundPolicy = BackgroundPolicy.LANES;
 	}
 
 	public GUIBoard getBoard() {

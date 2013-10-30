@@ -55,7 +55,6 @@ public class MallSim {
 	 */
 	public static void runSimulation() {
 		simulation.addObserver(frame.getBoard());
-		Board b = simulation.getMall().getBoard();
 
 		if (simThread != null)
 			simThread.stop();

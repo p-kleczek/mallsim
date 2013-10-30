@@ -121,7 +121,6 @@ public class ResourceManager {
 
 					mapRaster.getPixel(j, i, pixel);
 
-					// TODO: bit-shift + OR
 					int hash = pixel[0] * 255 * 255 + pixel[1] * 255 + pixel[2];
 
 					// [type][context data 0][contex data 1]

@@ -12,6 +12,5 @@ public class Logger {
         SimpleDateFormat format = new SimpleDateFormat("HH:mm:ss.SSS");
 
         System.out.println(String.format("[%s] %s", format.format(new Date()), what));
-        // TODO Needs moar file IO.
     }
 }

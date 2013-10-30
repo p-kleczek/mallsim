@@ -62,8 +62,8 @@ public class GUIBoard extends JComponent implements Observer {
 		setBackground(Color.WHITE);
 		setOpaque(true);
 
-		setPreferredSize(new Dimension(board.getWidth() * cellSize
-				+ 1, board.getHeight() * cellSize + 1));
+		setPreferredSize(new Dimension(board.getWidth() * cellSize + 1,
+				board.getHeight() * cellSize + 1));
 	}
 
 	protected void paintComponent(Graphics g) {
@@ -207,6 +207,27 @@ public class GUIBoard extends JComponent implements Observer {
 			case NONE:
 				color = Color.WHITE;
 				break;
+			case LANES:
+				switch (cell.getLaneDirection()) {
+				case EAST:
+					color = Color.YELLOW;
+					break;
+				case EMPTY:
+					color = Color.WHITE;
+					break;
+				case NONE:
+					color = Color.LIGHT_GRAY;
+					break;
+				case WEST:
+					color = Color.GREEN;
+					break;
+				default:
+					break;
+
+				}
+				break;
+			default:
+				break;
 			}
 			break;
 		case BLOCKED:
@@ -237,8 +258,8 @@ public class GUIBoard extends JComponent implements Observer {
 					.println(String.format("%d, %d, %d", coef, 255 - coef, 0));
 			System.out.println(String
 					.format("%d, %d, %d", -coef, 0, 255 + coef));
+			return null;
 		}
-		return Color.MAGENTA;
 	}
 
 	private void drawRoute(Graphics g, Agent a) {
@@ -343,9 +364,8 @@ public class GUIBoard extends JComponent implements Observer {
 				agentSize = Helpers.clamp(agentSize + resizeDelta * rotation,
 						2, 27);
 
-				Dimension d = new Dimension(board.getWidth()
-						* cellSize + 1, board.getHeight() * cellSize
-						+ 1);
+				Dimension d = new Dimension(board.getWidth() * cellSize + 1,
+						board.getHeight() * cellSize + 1);
 
 				setPreferredSize(d);
 

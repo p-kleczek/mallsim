@@ -32,7 +32,9 @@ public class TacticalWorker extends Thread {
 
 			if (a != null) {
 				a.clearTargets();
-				Tactical.initializeTargets(board, a, true);
+				Tactical.route(board, a, Tactical.nlaMoore);
+				
+				assert a.getTargetCount() > 0;
 			}
 
 			synchronized (this) {

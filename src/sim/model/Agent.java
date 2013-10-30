@@ -4,6 +4,7 @@ import java.awt.Point;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -98,7 +99,20 @@ public class Agent extends Observable {
 	 * Flaga określająca, czy Agent został usunięty z symulacji.
 	 */
 	private boolean isDead = false;
-	
+
+	public Agent(Agent a) {
+		vMax = a.getvMax();
+		agility = a.getAgility();
+		position = a.position == null ? null : new MyPoint(a.position);	// XXX: co, gdy position != null?
+		direction = a.getDirection();
+		route = new ArrayList<>(a.getRoute());
+		forceField = new HashMap<>(a.getForceField());
+		fieldsMoved = a.getFieldsMoved();
+		initialDistanceToTarget = a.getInitialDistanceToTarget();
+		holdTime = a.getHoldTime();
+		isDead = a.getDead();
+	}
+
 	public Agent(MovementBehavior movementBehavior) {
 
 		try {
@@ -110,7 +124,7 @@ public class Agent extends Observable {
 			vMax = 1;
 			agility = 0.5;
 		}
-		
+
 		route = new LinkedList<Point>();
 		forceField = Collections.unmodifiableMap(initForceField());
 

@@ -10,7 +10,7 @@ public class GuiState {
     }
 
     public static enum BackgroundPolicy {
-        NONE, SOCIAL_FIELD, VISITS, FEATURES, MOVEMENT_ALGORITHM
+        NONE, SOCIAL_FIELD, VISITS, FEATURES, MOVEMENT_ALGORITHM, LANES
     }
 
     private static Agent selectedAgent = null;
