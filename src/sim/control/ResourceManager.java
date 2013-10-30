@@ -23,6 +23,7 @@ import sim.model.algo.SocialForce;
 import sim.model.algo.Spawner;
 import sim.model.helpers.Rand;
 import sim.util.Logger;
+import sim.util.Logger.Level;
 
 public class ResourceManager {
 	public static final int MALL_WALL = 0x0;
@@ -47,7 +48,7 @@ public class ResourceManager {
 		Mall mall = new Mall();
 
 		Logger.log("Loading mall: " + mallFile + " with featuremap: "
-				+ featureMap);
+				+ featureMap, Level.INFO);
 
 		BufferedImage mallImage = null;
 		BufferedImage mapImage = null;
@@ -88,7 +89,7 @@ public class ResourceManager {
 			// Used to cache Attractors
 			HashMap<Integer, MallFeature> features = new HashMap<Integer, MallFeature>();
 
-			Logger.log("Creating board...");
+			Logger.log("Creating board...", Level.INFO);
 
 
 			int accessibleFieldsCounter = 0;
@@ -161,15 +162,15 @@ public class ResourceManager {
 			e.printStackTrace();
 		}
 
-		Logger.log("Board created!");
+		Logger.log("Board created!", Level.INFO);
 
-		Logger.log("Randomizing board...");
+		Logger.log("Randomizing board...", Level.INFO);
 
 		randomize(b, h * w / 250);
 
-		Logger.log("Board randomized!");
+		Logger.log("Board randomized!", Level.INFO);
 
-		Logger.log("Mall loaded!");
+		Logger.log("Mall loaded!", Level.INFO);
 
 		return mall;
 	}

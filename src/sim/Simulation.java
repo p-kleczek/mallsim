@@ -22,7 +22,8 @@ import sim.model.Mall;
 import sim.model.algo.Ped4.LaneDirection;
 import sim.model.helpers.Direction;
 import sim.model.helpers.Rand;
-import sim.util.AviRecorder;
+import sim.util.video.AviRecorder;
+import sim.util.video.VideoRecorder;
 
 import com.google.common.collect.Iterables;
 
@@ -62,7 +63,7 @@ public class Simulation extends Observable implements Runnable {
 	private final int ASSESSMENT_FRAME_WIDTH = 15;
 
 	private Mall mall = new Mall();
-	private AviRecorder aviRecorder;
+	private VideoRecorder videoRecorder;
 
 	private int stepCounter = 0;
 
@@ -73,9 +74,9 @@ public class Simulation extends Observable implements Runnable {
 
 	private BlockingQueue<Agent> agentsToCompute = new LinkedBlockingQueue<>(1);
 
-	public Simulation(AviRecorder aviRecorder) {
+	public Simulation(VideoRecorder videoRecorder) {
 		super();
-		this.aviRecorder = aviRecorder;
+		this.videoRecorder = videoRecorder;
 	}
 
 	public Mall getMall() {
@@ -243,8 +244,8 @@ public class Simulation extends Observable implements Runnable {
 		nTotalAgents += nAgentsBegin;
 
 		for (stepCounter = 0; stepCounter < STEPS; stepCounter++) {
-			if (stepCounter % aviRecorder.getSimFramesPerAviFrame() == 0)
-				aviRecorder.recordFrame();
+			if (stepCounter % videoRecorder.getSimFramesPerAviFrame() == 0)
+				videoRecorder.recordFrame();
 
 			generateAgent();
 

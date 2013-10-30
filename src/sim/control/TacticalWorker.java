@@ -28,8 +28,6 @@ public class TacticalWorker extends Thread {
 				e.printStackTrace();
 			}
 
-			System.out.println(this.getId() + "  [" + queue.size() + "]");
-
 			if (a != null) {
 				a.clearTargets();
 				Tactical.route(board, a, Tactical.nlaMoore);

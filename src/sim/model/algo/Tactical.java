@@ -13,6 +13,7 @@ import sim.model.Agent;
 import sim.model.Board;
 import sim.model.helpers.Rand;
 import sim.util.Logger;
+import sim.util.Logger.Level;
 
 public class Tactical {
 	/**
@@ -65,17 +66,17 @@ public class Tactical {
 			NeighborLookupAlgorithm algorithm) {
 		int numTargets = MIN_TARGETS + Rand.nextInt(MAX_TARGETS - MIN_TARGETS);
 
-		Logger.log(String.format("Initializing targets for %s...", agent));
+		Logger.log(String.format("Initializing targets for %s...", agent), Level.INFO);
 
 		Point[] targets = pickTargets(board, agent, numTargets);
 
-		Logger.log(String.format("Picked %d target positions.", targets.length));
-		Logger.log("Generating paths...");
+		Logger.log(String.format("Picked %d target positions.", targets.length), Level.INFO);
+		Logger.log("Generating paths...", Level.INFO);
 
 		computePaths(board, agent, algorithm, targets);
 
-		Logger.log("Paths generated!");
-		Logger.log("Targets initialized!");
+		Logger.log("Paths generated!", Level.INFO);
+		Logger.log("Targets initialized!", Level.INFO);
 	}
 
 	/**

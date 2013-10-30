@@ -253,10 +253,10 @@ public class GUIBoard extends JComponent implements Observer {
 					-coef, 0, 255 + coef);
 		} catch (Exception e) {
 			// FIXME Bugs like crazy.
-			System.out.println("Niewłaściwe wartości kolorów: ");
-			System.out
+			System.err.println("Niewłaściwe wartości kolorów: ");
+			System.err
 					.println(String.format("%d, %d, %d", coef, 255 - coef, 0));
-			System.out.println(String
+			System.err.println(String
 					.format("%d, %d, %d", -coef, 0, 255 + coef));
 			return null;
 		}

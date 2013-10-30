@@ -7,9 +7,9 @@ import javax.swing.UIManager;
 import sim.control.ResourceManager;
 import sim.gui.GUIBoard;
 import sim.gui.MallFrame;
-import sim.model.Board;
 import sim.model.Mall;
-import sim.util.AviRecorder;
+import sim.util.video.AviRecorder;
+import sim.util.video.VideoRecorder;
 
 public class MallSim {
 
@@ -19,8 +19,8 @@ public class MallSim {
 
 	static boolean isSuspended = false;
 
-	private static AviRecorder aviRecorder = new AviRecorder(frame);
-
+	private static VideoRecorder videoRecorder = new AviRecorder();
+	
 	/**
 	 * Launch the application.
 	 */
@@ -42,12 +42,14 @@ public class MallSim {
 	}
 
 	private static void prepare() {
-		simulation = new Simulation(aviRecorder);
+		simulation = new Simulation(videoRecorder);
 		Mall mall = ResourceManager.loadShoppingMall("ped4-test");
 		simulation.setMall(mall);
 
-		frame = new MallFrame(simulation.getMall(), aviRecorder);
+		frame = new MallFrame(simulation.getMall(), videoRecorder);
 		frame.setVisible(true);
+		
+		videoRecorder.setSource(frame);
 	}
 
 	/**

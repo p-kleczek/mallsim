@@ -2,6 +2,7 @@ package sim.gui;
 
 import java.awt.AWTException;
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -11,10 +12,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -23,10 +26,12 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JSlider;
+import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JToggleButton;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.border.BevelBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
@@ -43,13 +48,10 @@ import sim.gui.actions.ExitAction;
 import sim.gui.actions.PauseResumeAction;
 import sim.model.Mall;
 import sim.model.helpers.Rand;
-import sim.util.AviRecorder;
 import sim.util.Logger;
-import javax.swing.JSpinner;
-import javax.swing.JLabel;
-import java.awt.Component;
-import javax.swing.Box;
-import javax.swing.SpinnerNumberModel;
+import sim.util.Logger.Level;
+import sim.util.video.AviRecorder;
+import sim.util.video.VideoRecorder;
 
 @SuppressWarnings("serial")
 public class MallFrame extends JFrame {
@@ -58,13 +60,13 @@ public class MallFrame extends JFrame {
 	private GUIBoard guiBoard;
 	private PropertiesTable propertiesTable;
 	private JScrollPane boardScrollPane;
-	private final AviRecorder aviRecorder;
+	private final VideoRecorder videoRecorder;
 
 	/**
 	 * Create the frame.
 	 */
-	public MallFrame(Mall mall, AviRecorder aviRecorder) {
-		this.aviRecorder = aviRecorder;
+	public MallFrame(Mall mall, VideoRecorder aviRecorder) {
+		this.videoRecorder = aviRecorder;
 
 		setTitle("MallSim");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -119,7 +121,7 @@ public class MallFrame extends JFrame {
 					Rand.seed = newSeed;
 					Rand.setSeed(newSeed);
 				} catch (NumberFormatException e) {
-					Logger.log("ERROR: Could not change seed (NumberFormatException)");
+					Logger.log("ERROR: Could not change seed (NumberFormatException)", Level.ERROR);
 				}
 			}
 		});
@@ -346,7 +348,7 @@ public class MallFrame extends JFrame {
 			public void stateChanged(ChangeEvent e) {
 				JSpinner s = (JSpinner) e.getSource();
 
-				MallFrame.this.aviRecorder.setSimFramesPerAviFrame((Integer) s
+				MallFrame.this.videoRecorder.setSimFramesPerAviFrame((Integer) s
 						.getValue());
 			}
 		});
@@ -356,7 +358,7 @@ public class MallFrame extends JFrame {
 				JToggleButton b = (JToggleButton) e.getSource();
 				if (b.isSelected()) {
 					try {
-						MallFrame.this.aviRecorder.prepareAvi();
+						MallFrame.this.videoRecorder.prepare();
 					} catch (IOException e1) {
 						e1.printStackTrace();
 					} catch (AWTException e1) {
@@ -364,7 +366,7 @@ public class MallFrame extends JFrame {
 					}
 				} else {
 					try {
-						MallFrame.this.aviRecorder.finalizeAvi();
+						MallFrame.this.videoRecorder.finish();
 					} catch (IOException e1) {
 						e1.printStackTrace();
 					} catch (AWTException e1) {

@@ -8,9 +8,18 @@ import java.util.Date;
  */
 
 public class Logger {
-    public static void log(String what) {
-        SimpleDateFormat format = new SimpleDateFormat("HH:mm:ss.SSS");
+	public static enum Level {
+		INFO, ERROR
+	}
 
-        System.out.println(String.format("[%s] %s", format.format(new Date()), what));
-    }
+	private static Level minimumLevel = Level.ERROR;
+
+	public static void log(String what, Level severity) {
+		SimpleDateFormat format = new SimpleDateFormat("HH:mm:ss.SSS");
+
+		if (severity.ordinal() >= minimumLevel.ordinal()) {
+			System.out.println(String.format("[%s] %s",
+					format.format(new Date()), what));
+		}
+	}
 }
