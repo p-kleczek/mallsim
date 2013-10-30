@@ -6,12 +6,15 @@
 *.ear
 
 # Generated docs #
-docs/*.toc
+docs/tex/*.toc
 docs/tex/*.log
 docs/tex/*.synctex*
-docs/*.out
-docs/*.aux
-docs/*.lof
+docs/tex/*.out
+docs/tex/*.aux
+docs/tex/*.lof
+docs/tex/*.dvi
+docs/tex/*.bbl
+docs/tex/*.blg
 docs/html
 /out.avi
 /bin

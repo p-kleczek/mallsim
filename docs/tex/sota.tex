@@ -1,0 +1,71 @@
+\chapter{Analiza obecnych rozwi¹zañ}
+\label{cha:sota}
+
+W rozdziale tym przedstawiono klasyfikacjê zachowania agentów oraz dokonanu przegl¹du niektórych ze stosowanych obecnie podejœæ do modelowania ruchu pieszych. Poniewa¿ w niniejszej pracy zastosowane zosta³o podejœcie wieloagentowe, zostanie ono omówione szczegó³owo w kolejnych rozdzia³ach.
+
+%---------------------------------------------------------------------------
+
+\section{Zachowanie agentów}
+\label{sec:behavior}
+
+Norma \emph{ISO/TR 13387-1:1999 Fire safety engineering} \cite{FSE99} wprowadza nastêpuj¹cy podzia³ modeli ze wzglêdu na sposób definiowania zachowania agentów:
+\begin{itemize}
+	\item \textbf{modele bez okreœlonych zasad zachowania} \mbox{}  \\
+	Wp³yw na ruch agentów maj¹ jedynie czynniki fizyczne.
+	\item \textbf{modele z zachowaniem okreœlonym analogi¹ funkcjonaln¹} \mbox{} \\
+	Zosta³y okreœlone pewne zale¿noœci zwi¹zane z zachowaniem agentów, lecz s¹ one wspólne dla ca³ej populacji (tj. ka¿dy agent dzia³a wed³ug tego samego wzoru). Zasady zachowania mog¹ byæ zaczerpniête z dziedzin, w których wystêpuj¹ podobne zjawiska (np. dynamika p³ynów).
+	\item \textbf{modele z zachowaniem okreœlonym poœrednio} \mbox{} \\
+	Zachowanie agentów okreœlone jest np. poprzez skomplikowane zale¿noœci fizyczne.
+	\item \textbf{modele z zachowaniem okreœlonym zbiorem regu³} \mbox{} \\
+	Ka¿dy agent ma zdefiniowany zestaw zasad okreœlaj¹cych jego zachowanie (np. Jeœli w pomieszczeniu pojawi siê dym, opuszczam je najbli¿szymi drzwiami.). W tym przypadku problemem jest fakt, ¿e w podobnych warunkach podejmowane s¹ podobne decyzje (w sposób przewidywalny).
+	\item \textbf{modele z zachowaniem okreœlonym w oparciu o sztuczn¹ inteligencjê}
+\end{itemize}
+
+Wiêkszoœæ z tworzonych obecnie modeli definiuje zachowanie agentów w oparciu o analogiê funkcjonaln¹, poœrednio b¹dŸ z wykorzystaniem zbioru regu³ - metody te stanowi¹ kompromis pomiêdzy dok³adnoœci¹ symulacji, a z³o¿onoœci¹ modelu.
+
+%---------------------------------------------------------------------------
+
+\section{Stosowane modele}
+\label{sec:models}
+
+Jak wspomniano we wstêpie, zagadnienie modelowania mo¿e byæ rozpatrywane na ró¿nych poziomach abstrakcji - w szczególnoœci ró¿na mo¿e byæ skala rozwa¿anego zjawiska.
+
+Poni¿ej przedstawiono modele s³u¿¹ce do symulacji ruchu pieszych zarówno na du¿ych obszarach (np. dzielnicy) jak równie¿ na stosunkowo niewielkich powierzchniach (np. wewn¹trz budynków).
+
+\subsection{Model probabilistyczny}
+\label{sub:sotaProbabilistyczny}
+
+Przyk³adem pracy prezentuj¹cej takie podejœcie jest model wyboru trasy przez pieszych poruszaj¹cych siê po obszarach handlowych w centrum miasta \cite{BoTi86-1}. Opiera siê on na u¿yciu zmiennych niezale¿nych i procesie Markowa.
+
+Klient wchodz¹c do strefy handlowej staje przed problemem wyboru celów (sklepów) i kolejnoœci ich odwiedzania w celu zakupienia pewnych dóbr. Decyzjê podejmuje na podstawie analizy ró¿nych mo¿liwoœci i wyboru tej, która zostanie przez niego najwy¿ej oceniona na podstawie pewnych istotnych dla niego kryteriów (nie tylko odleg³oœci). Po osi¹gniêciu piewszego celu klient ponownie zastanawia siê nad wyborem kolejnego celu – w identyczny sposób. Cykl ten powtarza siê a¿ do chwili zakupienia wszystkich dóbr. Model zak³ada, ¿e sam proces dokonywania zakupów mo¿e staæ siê impulsem do kupna kolejnych produktów.
+
+Model ten s³u¿y do wyznaczania wielkoœci przep³ywów pieszych w sieci ulic, bez rozpatrywania zachowania pojedynczych agentów.
+
+%---------------------------------------------------------------------------
+
+\subsection{Model fizyczny}
+\label{sub:sotaFizyczny}
+
+W swojej pracy o modelowaniu ruchu pieszych w oparciu o dynamikê p³ynów \cite{fluid-dynamics} Dirk Helbing pokazuje, jak mo¿na opisaæ ruch zbiorowoœci pieszych za pomoc¹ modelu kinetyki gazu (zbli¿onego do modelu Boltzmana). Impulsem do badañ by³y wyniki analizy przyspieszonych nagrañ ruchu pieszych, kiedy to  zaobserwowano podobieñstwo potoków ruchu do strug cieczy.
+
+Model opisuje pieszych za pomoc¹ paru zmiennych fizycznych, jak po³o¿enie, prêdkoœæ aktualna, prêdkoœæ z jak¹ pieszy chcia³by siê poruszaæ, sk³onnoœæ do zmiany kierunku ruchu i prêdkoœci, które nastêpnie zostaj¹ powi¹zane równianiami ró¿niczkowymi z zakresu dynamiki p³ynów. W odró¿nieniu od wczeœniejszych podejœæ rozwa¿a siê mieszaninê wielu "`cieczy"' (ka¿da ciecz oznacza osobników chc¹cych poruszaæ siê ze zbli¿on¹ prêdkoœci¹).
+
+Model zwraca uwagê na istotny aspekt modelowania ruchu pieszych: asymetriê w prawdopodobieñstwie wyboru sposobu ominiêcia przeszkody (np. pieszczego id¹cego z naprzeciwka) – z lewej lub z prawej strony, choæ podobnie jak w przypadku modelu probabilistycznego piesi s¹ tu traktowani jako zbiorowoœæ.
+
+Rozwiniêciem idei traktowania pieszych w kontekœcie dynamiki p³ynów jest koncepcja \emph{social force} opracowana równie¿ przez Helbinga \cite{social-force}. Uwzglêdnia ona wzajemny wp³yw poszczególnych pieszych oraz przeszkód i obiektów (np. œcian budynków) na trajektoriê ruchu.
+
+%---------------------------------------------------------------------------
+
+\subsection{Model z wykorzystaniem algorytmów genetycznych}
+\label{sub:sotaGA}
+
+Artyku³ Kitazawy i Batty'ego \cite{KiBa04} skupia siê na opisie sposobu poruszania siê klientów wewn¹trz galerii handlowej z u¿yciem algorytmów genetycznych (GA).
+
+W modelu z u¿yciem GA ka¿dy agent posiada swoje uwarunkowania fizjologiczne (prêdkoœæ ruchu, szybkoœæ mêczenia siê) jak i gusta i preferencje (zwi¹zane z wiekiem, dochodzem, p³ci¹ itp.). Na podstawie tych danych tworzony jest wstêpny harmonogram odwiedzanych sklepów, który nastêpnie jest realizowany poprzez wybór optymalnej œcie¿ki (w tym celu u¿ywane s¹ algorytmy rozwi¹zuj¹ce problem komiwoja¿era). Harmonogram wizyty reprezentowany jest przez chromosom, w którym ka¿dy gen oznacza jeden z celów wizyty.
+
+Istotnym aspektem podejœcia przestawionego w pracy jest wyszczególnienie fazy operacyjnej ruchu, w której zachodz¹ dodatkowe zjawiska nieuwzglêdniane przez algorytm genetyczny, jak omijanie przeszkód w lokalnym otoczeniu pieszego (\emph{collision avoidance}) b¹dŸ grupowanie siê (\emph{flocking}). Zjawiska te s¹ modelowane w oparciu o "`pole widzenia"' i ci¹g³y obszar symulacji.
+
+Porównanie wyników symulacji z danymi rzeczywistymi prowadzi do konkluzji, ¿e klienci tworz¹ trasê swojej wizyty w centrum handlowym g³ównie poprzez minimalizacjê niêzbêdnej do przebycia drogi.
+Harmonogram wizyty reprezentowany jest przez chromosom, w którym ka¿dy gen oznacza jeden z celów wizyty. Podczas losowania pocz¹tkowego chromosomu zosta³y wprowadzone pewne ograniczenia (np. na cel pocz¹tkowy i koñcowy oraz na maksymaln¹ odleg³oœæ pomiêdzy s¹siednimi celami).
+
+W obecnym kszta³cie model skupia siê na stworzeniu trasy wizyty pojedynczej osoby wy³¹cznie w oparciu o czynniki przestrzenne (np. rozk³ad sklepów w centrum handlowym).

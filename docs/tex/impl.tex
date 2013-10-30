@@ -1,87 +1,125 @@
-\newpage
-    \section{Implementacja}
-    \label{sec:implementation}
+\chapter{Implementacja}
+\label{cha:implementation}
 
-    W celu wykonania projektu pos³u¿ono siê jêzykiem \textbf{Java} oraz bibliotekami \textbf{Java Swing} oraz \href{http://www.randelshofer.ch/monte/}{\textbf{Monte Media Library}}. Poni¿ej zawarto opis implementacji wybranych algorytmów i obiektów symulacji.
+Poni¿ej zawarto opis implementacji wybranych algorytmów i obiektów symulacji.
+ 
+%---------------------------------------------------------------------------
 
-        \subsection{Reprezentacja centrum handlowego}
-        \label{sec:mall-impl}
+\section{U¿yte technologie i narzêdzia}
+\label{sec:mall-impl}
 
-        Centra handlowe reprezentowane s¹ za pomoc¹ map bitowych (plików \emph{.bmp}), których piksele koduj¹ odpowiadaj¹ce im komórki siatki symulacji, co pozwala tworzyæ nowe rozk³ady pomieszczeñ i stref spejcalnych w bardzo prosty i szybki sposób. Implementacja przewiduje istnienie dwóch map dla ka¿dego centrum handlowego - mapê rozk³adu pomieszczeñ i algorytmów ruchu fazy operacyjnej (rysunek \ref{fig:mall-layout}) oraz mapê rozk³adu stref specjalnych centrum handlowego (rysunek \ref{fig:mall-features}).
+Symulacja zosta³a napisana w jêzyku \textbf{Java} (wersja 7), przy czym interfejs graficzny stworzono z u¿yciem standardowej biblioteki Javy - \textbf{Swing}. W celu udostêpnienia funkcjonalnoœci nagrywania przebiegu symulacji do pliku \emph{AVI} pos³u¿ono siê bibliotek¹ \href{http://www.randelshofer.ch/monte/}{\textbf{Monte Media Library}}, która rozpowszechniana jest na licencji \emph{Creative Commons Attribution 3.0}.
 
-        \begin{figure}[H]
-            \centering
-            \includegraphics[scale=0.3]{./img/MallLayout.pdf}
-            \caption{Przyk³adowy rozk³ad pomieszczeñ i algorytmów ruchu ma³ego centrum handlowego.}
-            \label{fig:mall-layout}
-        \end{figure}
+%---------------------------------------------------------------------------
 
-        \emph{Mapa rozk³adu pomieszczeñ} zawiera informacje o fizycznych w³aœciwoœciach pomieszczeñ modelowanego centrum handlowego - usytu³ówanie œciañ i innych obiektów blokuj¹cych przejœcie. Dodatkowo zawarto na niej rozk³ad algorytmów ruchu wykorzystanych w \hyperref[sec:operational]{fazie operacyjnej}, co pozwala jednoznacznie okreœliæ po³o¿enie korytarzy, skrzy¿owañ i innych cech centrum handlowego zwi¹zanych z ruchem agentów. \\
+\section{Reprezentacja centrum handlowego}
+\label{sec:mall-impl}
 
-\noindent
-Wartoœci znacz¹ce poszczególnych pixeli $RGB$ mapy:
+Centra handlowe reprezentowane s¹ za pomoc¹ map bitowych w formacie \emph{BMP}, w których ka¿dy piksel odpowiada jednej komórce siatki w modelu. Umo¿liwia to tworzenie planów obiektów handlowych w ³atwy i szybki sposób, z u¿yciem ogólnodostêpnych narzêdzi jak \emph{MS Paint} albo \emph{GIMP}.
 
-        \begin{itemize}
-            \item $(0x00, *, *)$ - wartoœæ zarezerwowana dla œcian i innych obiektów blokuj¹cych przejœcie.
-            \item $(0x7F, *, *)$ - wartoœæ determinuj¹ca wykorzystanie algorytmu \hyperref[sec:movement-impl]{Ped-4}.
-            \item $(0xFF, *, *)$ - wartoœæ determinuj¹ca wykorzystanie algorytmu \hyperref[sec:social-force-impl]{Social Force}.
-        \end{itemize}
+Ka¿de centrum handlowe opisywane jest przy u¿yciu dwóch plików - mapy rozk³adu pomieszczeñ i algorytmów ruchu fazy operacyjnej (Rys. \ref{fig:mall-layout}) oraz mapy rozk³adu stref specjalnych (Rys. \ref{fig:mall-features}).
 
-        \begin{figure}[H]
-            \centering
-            \includegraphics[scale=0.3]{./img/MallFeatures.pdf}
-            \caption{Przyk³adowy rozk³ad stref specjalnych ma³ego centrum handlowego.}
-            \label{fig:mall-features}
-        \end{figure}
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=0.3]{./img/MallLayout.pdf}
+	\caption{Przyk³adowy rozk³ad pomieszczeñ i algorytmów ruchu ma³ego centrum handlowego.}
+	\label{fig:mall-layout}
+\end{figure}
 
-        \emph{Mapa rozk³adu stref specjalnych} centrum handlowego zawiera informacje o funkcjonalnych cechach modelowanego centrum handlowego - rozmieszczenie miejsc przeznaczonych do czekania, kolejek przy kasach sklepowych, okien wystawowych i sieci routingu u³atwiaj¹cej przemieszczanie siê w centrum handlowym. Informacje te wykorzystywane s¹ przede wszystkim przez \hyperref[sec:tactical]{fazê taktyczn¹} wykorzystanego algorytmu, gdzie s¹ s³u¿¹ jako \hyperref[sec:path-deviation]{dodatkowa heurystyka} \hyperref[sec:path-finding]{algorytmu wyszukiwania œcie¿ek A*}. \\
+%---------------------------------------------------------------------------
 
-\noindent
-Wartoœci znacz¹ce poszczególnych pixeli $RGB$ mapy:
+\subsection{Mapa rozk³adu pomieszczeñ}
+\label{sub:rooms-map}
 
-        \begin{itemize}
-            \item $(0x7F, A, H)$ - wartoœæ oznaczaj¹ca \hyperref[sec:path-deviation]{uogólniony atraktor} o \emph{atrakcyjnoœci} $A$ i \emph{czasie wstrzymania} $H$.
-            \item $(0xFF, *, *)$ - wartoœæ oznaczaj¹ca \hyperref[sec:entrance-exits]{przejœcia/wejœcia}, które odpowiednio tworz¹ lub usuwaj¹ agentów z symulacji.
-        \end{itemize}
+Mapa rozk³adu pomieszczeñ okreœla dostêpnoœæ komórek dla agentów - komórki niedostêpne to œciany, stoiska roz³o¿one w pasa¿ach i inne obiekty blokuj¹ce przejœcie. Dodatkowo zawiera ona informacje o typie algorytmu ruchu wykorzystanego w \hyperref[sec:operational]{fazie operacyjnej}, zwi¹zanego z poszczególnymi komórkami.
 
-\noindent
-Z racji ograniczonego czasu i ni¿szego priorytetu implementacja nie uwzglêdnia istnienia wielu piêter w centrum handlowym - symulacja ruchu ludzi wewn¹trz wielopiêtrowego centrum handlowego mo¿e byæ traktowana jako wiele symulacji ruchu ludzi wewn¹trz jednopiêtrowego centrum handlowego.
+Do kodowania informacji u¿yto tylko jednego z trzech kana³ów \emph{RGB} - czerwonego (wartoœci pozosta³ych kana³ów s¹ pomijane). Znaczenie poszczególnych wartoœci kana³u czerwonego dla pixeli mapy:
+\begin{itemize}
+	\item $0x00$ - komórka niedostêpna (obiekt uniemo¿liwiaj¹cy przejœcie)
+	\item $0x7F$ - komórka dostêpna, ruch z u¿yciem algorytmu \hyperref[sec:movement-impl]{Ped-4}.
+	\item $0xFF$ - komórka dostêpna, ruch z u¿yciem algorytmu \hyperref[sec:social-force-impl]{Social Distances}.
+\end{itemize}
 
-        \subsection{Wybór puntków docelowych}
-        \label{sec:destination-choice}
+Na rysunku \ref{fig:mall-features} przedstawiono przyk³adowy rozk³ad stref specjalnych ma³ego centrum handlowego.
 
-        \emph{Punkty docelowe} reprezentuj¹ cele podró¿y agentów. Z racji mniejszego priorytetu i braku czasu algorytm wybiera zadan¹ iloœæ losowych miejsc znajduj¹cych siê we wnêtrzu centrum handlowego, które nastêpnie sortuje celem minimalizacji sumarycznej d³ugoœci drogi je ³¹cz¹cej. Opisany sposób wyboru miejsc docelowych pozwala symulowaæ wszystkie zachowania poruszaj¹cych siê ludzi na poziomie lokalnym (na przyk³ad kolejkowanie siê) i wiêkszoœæ schematów zachowañ t³umu na poziomie globalnym (z wy³¹czeniem bardziej abstrakcyjnych zachowañ uwarunkowanych socjologicznie i kulturowo, takich jak ró¿ne stosunki iloœciowe agentów danego typu w ró¿nych czêœciach centrum handlowego).
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=0.3]{./img/MallFeatures.pdf}
+	\caption{Przyk³adowy rozk³ad stref specjalnych ma³ego centrum handlowego.}
+	\label{fig:mall-features}
+\end{figure}
 
-\newpage
-        \subsection{Znajdowanie œcie¿ek}
-        \label{sec:path-finding}
+%---------------------------------------------------------------------------
 
-W celu wyznaczania œcie¿ek prowadz¹cych do punktów docelowych wykorzystano algorytm \textbf{A*}. A* jest algorytmem kompletnym, s³u¿¹cym do wyznaczania najkrótszej drogi ³¹cz¹cej dwa wierzcho³ki grafu, który w ka¿dym przypadku jest w stanie znaleŸæ drogê, jeœli takowa istnieje. A* wykorzystuje \hyperref[sec:path-deviation]{heurystykê}, która estymuje koszt œcie¿ki prowadz¹cej z danego wierzcho³ka do celu, staraj¹c siê rozpatrywaæ tylko najbardziej obiecuj¹ce wierzcho³ki. \\
+\subsection{Mapa rozk³adu stref specjalnych}
+\label{sub:rooms-map}
 
-\noindent
-Algorytm przochowuje zbiory wierzcho³ków ``otwartych'' i ``zamkniêtych'', czyli odpowiednio, wierzcho³ków, które s¹ rozpatrywane i tych, które ju¿ zosta³y sprawdzone. Dzia³anie algorytmu rozpoczyna siê od dodania aktualnej pozycji agenta do zbioru wierzcho³ków otwartych. W ka¿dym nastêpnym kroku algorytm wykonuje iteracyjnie nastêpuj¹ce operacje:
+Mapa rozk³adu stref specjalnych centrum handlowego zawiera informacje o jego cechach funkcjonalnych - rozmieszczeniu miejsc przeznaczonych do czekania, kolejek przy kasach sklepowych, okien wystawowych. Oprócz tego mapa zawiera informacje o "`sieci routingu"' u³atwiaj¹cej przemieszczanie siê w centrum handlowym. Wszystkie powy¿sze dane wykorzystywane s¹ przede wszystkim w \hyperref[sec:tactical]{fazie taktycznej}, gdzie s¹ s³u¿¹ jako \hyperref[sec:path-deviation]{dodatkowa heurystyka} \hyperref[sec:path-finding]{algorytmu wyszukiwania œcie¿ek A*}. \\
 
-        \begin{itemize}
-            \item Ze zbioru wierzcho³ków otwartych wybierany jest najbardziej obiecuj¹cy wierzcho³ek $x$, minimalizuj¹cy funkcjê $f(x)$:
-              \[ f(x) = g(x) + h(x) \]
-              gdzie $g(x)$ okreœla d³ugoœæ drogi prowadz¹cej z wierzcho³ka pocz¹tkowego do wierzcho³ka $x$, a $h(x)$ okreœla przewidywan¹ przez heurystykê d³ugoœæ drogi ³¹cz¹cej wierzcho³ek $x$ i cel podró¿y.
-            \item W przypadku osi¹gniêcia punktu docelowego algorytm koñczy siê sukcesem.
-            \item W przeciwnym przypadku wierzcho³ek $x$ dodawany jest do zbioru wierzcho³ków zamikniêtych, a s¹siaduj¹ce z nim wierzcho³ki (wierzcho³ki osi¹galne w jednym kroku zaczynaj¹c w $x$), które nie nale¿¹ do zbioru wierzcho³ków zamkniêtych, dodawane s¹ do zbioru wierzcho³ków otwartych.
-        \end{itemize}
+Znaczenie poszczególnych wartoœci kana³ów \emph{RGB} pixeli mapy ($*$ - wartoœæ dowolna):
+\begin{itemize}
+	\item $(0x7F, A, H)$ - \hyperref[sec:path-deviation]{uogólniony atraktor} o \emph{atrakcyjnoœci} $A$ i \emph{czasie wstrzymania} $H$.
+	\item $(0xFF, *, *)$ - \hyperref[sec:entrance-exits]{wejœcie/wyjœcie}
+\end{itemize}
 
-\noindent
-Zale¿nie od zastosowanej heurystyki algorytm A* jest w stanie dostarczaæ optymalne œcie¿ki ³¹cz¹ce dwa punkty lub suboptymalne œcie¿ki, które s¹ obliczane szybciej. Ze wzglêdu na rozwi¹zywany problem i brak wymogu dostarczania optymalnych œcie¿ek w implementacji zastosowano z³o¿on¹, dopuszczaln¹ (\emph{ang. admissible}) heurystykê opisan¹ w nastêpnej sekcji, któr¹ dodatkowo obarczono wag¹ $\epsilon = 5$, co pozwala szybko generowaæ œcie¿ki o po¿¹danym i koszcie nie przekraczaj¹cym $\epsilon$ razy kosztu œcie¿ki optymalnej.
+%---------------------------------------------------------------------------
 
-        \subsection{Dewiacja œcie¿ek}
-        \label{sec:path-deviation}
+\subsection{Uwagi}
+\label{sub:mall-impl-notes}
 
-        Dewiacja œcie¿ek zachodzi podczas dzia³ania algorytmu wyszukiwania œcie¿ek opisanego w poprzedniej sekcji celem u³atwienia zachodzenia pewnych zachowañ, takich jak poruszanie siê w odpowiedni sposób po korytarzach centrum handlowego. Odpowiednia dewiacja œcie¿ek zosta³a osi¹gniêta przez modyfikacjê heurystyki zastosowanego algorytmu A* - ka¿dy fragment \hyperref[fig:mall-features]{mapy rozk³adu stref specjalnych} centrum handlowego posiada przypisan¹ mu wartoœæ determinuj¹c¹ parametry \textbf{uogólnionego atraktora} - \emph{atrakcjê A} oraz \emph{czas wstrzymania H}. \\
+Choæ w niniejszej pracy ograniczono siê do przeprowadzania symulacji dla jednej kondygnacji centrum handlowego, to jednak zaprezentowane rozwi¹zanie jest skalowalne - symulacjê ruchu w galerii wielopoziomowej mo¿na potraktowaæ jako parê równoleg³ych symulacji (odpowiadaj¹cych poszczególnym piêtrom). Zjawiska obserwowane w pobli¿u schodów ruchomych - grupowania siê ludzi w oczekiwaniu na wejœcie na schody - wystêpuj¹ równie¿ w okolicy wyjœæ z galerii, st¹d traktuj¹c schody jak wejœcie-wyjœcie (pomiêdzy piêtrami) otrzymamy zbli¿one rezultaty.
 
-        \emph{Atrakcja} odpowiada za przyci¹ganie agentów do pewnych stref centrum handlowego i ma za zadanie przede wszystkim umo¿liwiæ realizacjê zdefiniowanych przy analizie problemu \hyperref[sec:attractors]{atraktorów}. Jej wartoœæ kodowana jest przez komponent $G$ pixeli $RGB$ mapy rozk³adu stref specjalnych centrum handlowego, koduj¹cych atraktory (komponent $R$ równy $0x7F$). Wartoœæ komponentu $G$ nale¿y podzieliæ przez $0x7F$ celem przeskalowania do przedzia³u $[0, 2)$. Heurystyka algorytmu A* wykorzystuje tê wartoœæ, jako dodatkowy mno¿nik estymowanego kosztu œcie¿ki, tote¿ wartoœæ 0 oznacza najsilniejsz¹ atrakcjê, wartoœæ 1 brak atrakcji natomiast wartoœæ 2 oznacza odpychanie - algorytm wyszukiwania œcie¿ek bêdzie preferowa³ inne drogi.
+%---------------------------------------------------------------------------
 
-        \emph{Czas wstrzymania} odpowiada za opóŸnianie agentów podczas wykonywania ruchu - agent osi¹gaj¹cy komórkê siatki symulacji obarczon¹ czasem oczekiwania zostaje opóŸniony na zadan¹ iloœæ czasu. Wartoœæ czasu wstrzymania kodowana jest przez komponent $B$ pixeli $RGB$ mapy rozk³adu stref specjalnych centrum handlowego, koduj¹cych atraktory. Wartoœæ tego komponentu traktowana jest jako iloœæ kroków symulacji, na które opóŸniany agent zostanie wstrzymany. \\
+\section{Ruch agentów - faza taktyczna}
+\label{sec:agents-move-tactical}
 
-Implementacja \emph{uogólnionego atraktora} okaza³a siê na tyle elastyczna, ¿e wyeliminowa³a koniecznoœæ osobnej implementacji \hyperref[sec:queues]{kolejek} i \hyperref[sec:holders]{opóŸniaczy} - kolejki realizowane s¹ jako linie znacz¹co zwiêkszonej atrakcji o krótkim czasie wstrzymania, natomiast opóŸniacze s¹ punktami o znacz¹co zwiêkszonym czasie wstrzymania. \hyperref[sec:attractors]{Atraktory} zosta³y zrealizowane jako gradienty zwiêkszaj¹cej siê atrakcji i czasu wstrzymania - agenci odwiedzajacy atraktor spêdzaj¹ w nim tym wiêcej czasu, im bli¿ej jego centrum siê znajduj¹. Dodatkowym atutem zastosowanej implementacji jest mo¿liwoœæ routingu agentów w centrum handlowym. Wszystkie formy stref specjalnych wyra¿onych przez modyfikacjê heurystyki algorytmu A* zosta³y zawarte na pogl¹dowym rysunku \ref{fig:mall-features}.
+%---------------------------------------------------------------------------
+
+\subsection{Wybór puntków docelowych}
+\label{sub:destination-choice}
+
+Punkty docelowe reprezentuj¹ cele podró¿y agentów. Algorytm wybiera zadan¹ iloœæ miejsc znajduj¹cych siê we wnêtrzu centrum handlowego, które nastêpnie sortuje w celu minimalizacji ³¹cznej d³ugoœci dróg ³¹cz¹cych ze sob¹ kolejne punkty. Opisany sposób wyboru miejsc docelowych pozwala symulowaæ wszystkie zachowania poruszaj¹cych siê ludzi na poziomie lokalnym (np. kolejkowanie siê) i wiêkszoœæ schematów zachowañ t³umu na poziomie globalnym (z wy³¹czeniem pewnych bardziej z³o¿onych zjawisk, jak ró¿ne stosunki iloœciowe agentów danego typu w ró¿nych czêœciach centrum handlowego).
+
+Poniewa¿ w pracy postanowiono skupiæ siê na aspekcie operacyjnym zagadnienia poruszania siê pieszych po centrum handlowym, algorytm wyboru punktów docelowych zosta³ znacz¹co uproszczony. W praktyce punkty wybierane s¹ w sposób ca³kowicie losoy.
+
+%---------------------------------------------------------------------------
+
+\subsection{Znajdowanie œcie¿ek}
+\label{sub:path-finding}
+
+W celu wyznaczania œcie¿ek prowadz¹cych do punktów docelowych wykorzystano algorytm \textbf{A*}. A* jest algorytmem kompletnym, s³u¿¹cym do wyznaczania najkrótszej drogi ³¹cz¹cej dwa wierzcho³ki grafu. Oznacza to, ¿e znajdzie on optymaln¹ drogê i zakoñczy dzia³anie który, jeœli tylko takowa istnieje. A* wykorzystuje \hyperref[sec:path-deviation]{heurystykê}, która s³u¿y szacowaniu kosztu œcie¿ki prowadz¹cej z danego wierzcho³ka do celu, staraj¹c siê rozpatrywaæ tylko najbardziej obiecuj¹ce wierzcho³ki.
+
+Algorytm przochowuje zbiory wierzcho³ków "`otwartych"' (rozpatrywanych) i "`zamkniêtych"' (tych, które ju¿ zosta³y sprawdzone). Dzia³anie algorytmu rozpoczyna siê od dodania aktualnej pozycji agenta do zbioru wierzcho³ków otwartych. Nastêpnie algorytm wykonuje iteracyjnie nastêpuj¹ce kroki:
+
+\begin{itemize}
+	\item Ze zbioru wierzcho³ków otwartych wybierz najbardziej obiecuj¹cy wierzcho³ek $x$, minimalizuj¹cy funkcjê $f(x)$:
+	  \[ f(x) = g(x) + h(x) \]
+	  gdzie $g(x)$ okreœla d³ugoœæ drogi prowadz¹cej z wierzcho³ka pocz¹tkowego do wierzcho³ka $x$, a $h(x)$ okreœla przewidywan¹ przez heurystykê d³ugoœæ drogi ³¹cz¹cej wierzcho³ek $x$ i cel podró¿y.
+	\item W przypadku osi¹gniêcia punktu docelowego zakoñcz dzia³anie (sukces).
+	\item W przeciwnym przypadku dodaj wierzcho³ek $x$ do zbioru wierzcho³ków zamkniêtych, a s¹siaduj¹ce z nim wierzcho³ki (wierzcho³ki osi¹galne w jednym kroku zaczynaj¹c w $x$), które nie nale¿¹ do zbioru wierzcho³ków zamkniêtych, dodaj do zbioru wierzcho³ków otwartych.
+\end{itemize}
+
+Zale¿nie od zastosowanej heurystyki algorytm A* jest w stanie dostarczaæ optymalne œcie¿ki ³¹cz¹ce dwa punkty lub suboptymalne œcie¿ki, które s¹ obliczane szybciej. Poniewa¿ w rzeczywistym œwiecie pieszy praktycznie nie jest w stanie wybraæ w pe³ni optymalnej drogi, w implementacji zastosowano z³o¿on¹, dopuszczaln¹ (ang. \emph{admissible}) heurystykê dostarczaj¹c¹ œcie¿ki suboptymalne. Heurystyka ta zosta³a opisana w nastêpnej sekcji.
+
+%---------------------------------------------------------------------------
+
+\subsection{Dewiacja œcie¿ek}
+\label{sub:path-deviation}
+
+Dewiacja œcie¿ek zachodzi podczas dzia³ania algorytmu wyszukiwania œcie¿ek opisanego w poprzedniej sekcji celem u³atwienia zachodzenia pewnych zachowañ, takich jak poruszanie siê w odpowiedni sposób po korytarzach centrum handlowego. Odpowiednia dewiacja œcie¿ek zosta³a osi¹gniêta przez modyfikacjê heurystyki zastosowanego algorytmu A* - ka¿dy fragment \hyperref[fig:mall-features]{mapy rozk³adu stref specjalnych} centrum handlowego posiada przypisan¹ mu wartoœci okreœlaj¹ce parametry \textbf{uogólnionego atraktora} - \emph{atrakcjê} $A$ oraz \emph{czas wstrzymania} $H$.
+
+Dodatkowo heurystykê obarczono wag¹ $\epsilon = 5$, co pozwala szybko generowaæ œcie¿ki o po¿¹danym koszcie (tj. takim, który nie przekraczacza $\epsilon$ razy kosztu œcie¿ki optymalnej).
+
+\emph{Atrakcja} odpowiada za przyci¹ganie agentów do pewnych stref centrum handlowego. Umo¿liwia ona realizacjê zdefiniowanych przy analizie problemu \hyperref[sec:attractors]{atraktorów}. Jej wartoœæ kodowana jest przez kana³ zielony ($G$) pixeli oznaczaj¹cych atraktory na mapie rozk³adu stref specjalnych centrum handlowego. Wartoœæ $G$ nale¿y podzieliæ przez $0x7F (127)$ w celu przeskalowania jej do przedzia³u $[0, 2)$.
+%$$A = G \cdot \frac{1}{127} $$
+Heurystyka algorytmu A* wykorzystuje tê wartoœæ, jako dodatkowy mno¿nik szacowanego kosztu œcie¿ki: wartoœæ 0 oznacza najsilniejsz¹ atrakcjê, wartoœæ 1 - brak atrakcji, natomiast wartoœæ 2 oznacza odpychanie (algorytm wyszukiwania œcie¿ek bêdzie preferowa³ inne drogi).
+
+% TODO @up : 0/1/2? a nie -1/0/1
+
+\emph{Czas wstrzymania} odpowiada za opóŸnianie agentów podczas wykonywania ruchu. Gdy agent znajdzie siê w komórce obarczonej czasem oczekiwania, jego dalszy ruch zostaje wstrzymany na zadan¹ iloœæ cykli symulacji. Wartoœæ czasu wstrzymania kodowana jest przez kana³ niebieski ($B$) pixeli oznaczaj¹cych atraktory na mapie rozk³adu stref specjalnych centrum handlowego.
+
+%---------------------------------------------------------------------------
 
         \subsection{Reprezentacja agentów}
         \label{sec:actor-impl}
@@ -98,15 +136,15 @@ Implementacja \emph{uogólnionego atraktora} okaza³a siê na tyle elastyczna, ¿e w
 \noindent
 Znaczenie poszczególnych parametrów:
 \begin{itemize}
-\item \textbf{vMax} â€“ maksymalna iloœæ punktów ruchu do wykorzystania w danej iteracji fazy operacyjnej
-\item \textbf{agility} â€“ sk³onnoœæ do dokonywania zamian z innymi podczas etapu poruszania agentów
-\item \textbf{position} â€“ po³o¿enie agenta na planszy galerii
-\item \textbf{direction} â€“ aktualny kierunek ruchu (dostêpne kierunki s¹ zgodne ze stronami œwiata)
-\item \textbf{route} â€“ lista wspó³rzêdnych p³ytek-celów do odwiedzenia
-\item \textbf{forceField} â€“ opis wartoœci potencja³u pól wokó³ agenta (przy za³o¿eniu, ¿e agent zwrócony jest w kierunku pó³nocnym)
-\item \textbf{fieldsMoved} â€“ odleg³oœæ (mierzona w p³ytkach) przebyta od ostatniego celu do danej chwili
-\item \textbf{initialDistanceToTarget} â€“ teoretyczna minimalna odleg³oœæ od poprzedniego do obecnego celu
-\item \textbf{holdTime} â€“ pozosta³y czas oczekiwania (np. w kolejce)
+\item \textbf{vMax} -- maksymalna iloœæ punktów ruchu do wykorzystania w danej iteracji fazy operacyjnej
+\item \textbf{agility} -- sk³onnoœæ do dokonywania zamian z innymi podczas etapu poruszania agentów
+\item \textbf{position} -- po³o¿enie agenta na planszy galerii
+\item \textbf{direction} -- aktualny kierunek ruchu (dostêpne kierunki s¹ zgodne ze stronami œwiata)
+\item \textbf{route} -- lista wspó³rzêdnych p³ytek-celów do odwiedzenia
+\item \textbf{forceField} -- opis wartoœci potencja³u pól wokó³ agenta (przy za³o¿eniu, ¿e agent zwrócony jest w kierunku pó³nocnym)
+\item \textbf{fieldsMoved} -- odleg³oœæ (mierzona w p³ytkach) przebyta od ostatniego celu do danej chwili
+\item \textbf{initialDistanceToTarget} -- teoretyczna minimalna odleg³oœæ od poprzedniego do obecnego celu
+\item \textbf{holdTime} -- pozosta³y czas oczekiwania (np. w kolejce)
 \end{itemize}
 
 Czêœæ spoœród powy¿szych parametrów agenta inicjalizowana jest na podstawie plików zawieraj¹cych opisy pewnych ogólnych charakterystyk ludzi, np. "typ dynamiczny" oznacza cz³owieka poruszaj¹cego siê szybko i sk³onnego do dokonywania zamian, "typ emeryta" oznacza stateczny krok i niechêæ do zamian.
@@ -225,7 +263,7 @@ Poni¿ej przedstawiono pseudokody metody odpowiedzialnej za ruch "do przodu" w al
 \end{algorithm}
 
 \indent Funkcja wyznaczaj¹ca dostêpne pola ogranicza mo¿liwoœ ruchu tak, aby agent albo dalej przemieszcza³ siê po dotychczasowej trajektorii, albo skrêci³ w stronê celu. \\
-\indent Potencja³ pola obliczany jest na podstawie si³y oddzia³ywania innych ludzi (ujemna sk³adowa) oraz odleg³oœci pola od celu (dodatnia sk³adowa). W przypadku, gdy agent ju¿ doœæ d³ugo zmierza do celu (tzn. przebyta przez niego droga znacz¹co przekracza minimaln¹ drogê konieczn¹ do osi¹gniêcia celu), lecz nie mo¿e go osi¹gn¹æ, przestaje zwracaæ tak¹ uwagê na innych agentów â€“ efekt ten zosta³ osi¹gniêty przez dodatkowe zwiêkszenie potencja³u dostêpnej p³ytki le¿¹cej najbli¿ej celu. \\
+\indent Potencja³ pola obliczany jest na podstawie si³y oddzia³ywania innych ludzi (ujemna sk³adowa) oraz odleg³oœci pola od celu (dodatnia sk³adowa). W przypadku, gdy agent ju¿ doœæ d³ugo zmierza do celu (tzn. przebyta przez niego droga znacz¹co przekracza minimaln¹ drogê konieczn¹ do osi¹gniêcia celu), lecz nie mo¿e go osi¹gn¹æ, przestaje zwracaæ tak¹ uwagê na innych agentów -- efekt ten zosta³ osi¹gniêty przez dodatkowe zwiêkszenie potencja³u dostêpnej p³ytki le¿¹cej najbli¿ej celu. \\
 \indent W przypadku, gdy brak jest dostêpnych p³ytek, agent obraca siê odrobinê w miejscu, by w nastêpnym kroku zyskaæ nowe mo¿liwoœci ruchu (ze wzglêdu na zmianê zbioru dostêpnych p³ytek).
 
 \newpage

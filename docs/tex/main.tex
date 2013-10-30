@@ -1,41 +1,44 @@
-\documentclass[pdflatex,11pt]{aghdpl}
-% \documentclass{aghdpl}               % przy kompilacji programem latex
+%\documentclass[pdflatex,11pt]{aghdpl}
+\documentclass{aghdpl}               % przy kompilacji programem latex
 % \documentclass[pdflatex,en]{aghdpl}  % praca w jêzyku angielskim
 \usepackage[polish]{babel}
-\usepackage[latin2]{inputenc}
+\usepackage[cp1250]{inputenc}
 
 % dodatkowe pakiety
+\usepackage{hyperref}
 \usepackage{enumerate}
 \usepackage{listings}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 \lstloadlanguages{TeX}
+
 
 %---------------------------------------------------------------------------
 
-\author{Marcin Szpyrka}
-\shortauthor{M. Szpyrka}
+\author{Pawe³ K³eczek}
+\shortauthor{P. K³eczek}
 
-\titlePL{Przygotowanie pracy dyplomowej w~systemie \LaTeX}
-\titleEN{Thesis in \LaTeX}
+\titlePL{Symulacja ruchu ludzi w galerii handlowej}
+\titleEN{A simulation of pedestrian behavior in a shopping mall}
 
-\shorttitlePL{Przygotowanie pracy dyplomowej w~systemie \LaTeX} % skrócona wersja tytu³u je¶li jest bardzo d³ugi
-\shorttitleEN{Thesis in \LaTeX}
+\shorttitlePL{Symulacja ruchu ludzi w galerii handlowej}
+\shorttitleEN{A simulation of pedestrian behavior in a shopping mall}
 
-\thesistypePL{Praca magisterska}
-\thesistypeEN{Master of Science Thesis}
+\thesistypePL{Praca in¿ynierska}
+\thesistypeEN{Bachelor of Science Thesis}
 
-\supervisorPL{dr hab. Marcin Szpyrka}
-\supervisorEN{Marcin Szpyrka Ph.D}
+\supervisorPL{dr in¿. Jaros³aw W¹s}
+\supervisorEN{Jaros³aw W¹s Ph.D}
 
-\date{2011}
+\date{2013}
 
-\departmentPL{Katedra Automatyki}
-\departmentEN{Department of Automatics}
+\departmentPL{Katedra Informatyki Stosowanej}
+\departmentEN{Department of Applied Computer Science}
 
-\facultyPL{Wydzia³ Elektrotechniki, Automatyki, Informatyki i Elektroniki}
-\facultyEN{Faculty of Electrical Engineering, Automatics, Computer Science and Electronics}
+\facultyPL{Wydzia³ Elektrotechniki, Automatyki, Informatyki i In¿ynierii Biomedycznej}
+\facultyEN{Faculty of Electrical Engineering, Automatics, Computer Science and Biomedical Engineering}
 
-\acknowledgements{Serdecznie dziêkujê \dots tu ci±g dalszych podziêkowañ np. dla promotora, ¿ony, s±siada itp.}
-
+\acknowledgements{} % podziêkowania
 
 
 \setlength{\cftsecnumwidth}{10mm}
@@ -44,15 +47,16 @@
 
 \begin{document}
 
-\titlepages
+%\titlepages
 
-\tableofcontents
-\clearpage
+%\tableofcontents
+%\clearpage
 
-\include{intro}
-%\include{model_mall}
+%\include{intro}
+%\include{sota}
 %\include{model_move}
-%\include{impl}
+%\include{model_mall}
+\include{impl}
 %\include{sim}
 
 
@@ -63,26 +67,10 @@
 % \include{dodatekB}
 % itd.
 
-\bibliographystyle{alpha}
 \bibliography{bib}
-%\begin{thebibliography}{1}
-%
-%\bibitem{Dil00}
-%A.~Diller.
-%\newblock {\em LaTeX wiersz po wierszu}.
-%\newblock Wydawnictwo Helion, Gliwice, 2000.
-%
-%\bibitem{Lam92}
-%L.~Lamport.
-%\newblock {\em LaTeX system przygotowywania dokumentów}.
-%\newblock Wydawnictwo Ariel, Krakow, 1992.
-%
-%\bibitem{Alvis2011}
-%M.~Szpyrka.
-%\newblock {\em {On Line Alvis Manual}}.
-%\newblock AGH University of Science and Technology, 2011.cccccc
-%\newblock \\\texttt{http://fm.ia.agh.edu.pl/alvis:manual}.
-%
-%\end{thebibliography}
+\bibliographystyle{alpha}
+
+% Kolejne pozycje bibliograficzne:
+% *) algorytm A*
 
 \end{document}

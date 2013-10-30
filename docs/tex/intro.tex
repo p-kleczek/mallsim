@@ -1,61 +1,18 @@
-\chapter[]{Wprowadzenie}
-\label{cha:intro} 
+\chapter{Wprowadzenie}
+\label{cha:wprowadzenie} 
+ 
+ Zagadnienie modelowania ruchu i zachowania pieszych jest od d³ugiego czasu postrzegane jako istotne z punktu widzenia sektora us³ugowego i handlowego. Przekonanie to znajduje potwierdzenie w badaniach przytoczonych choæby  przez Aloysa Borgersa i Harry'ego Timmermansa \cite{BoTi86-1}, które wykaza³y wysok¹ zale¿noœæ rentownoœci sklepów od sposobu poruszania siê potencjalnych klientów. Problem ten jest doœæ z³o¿ony i dodatkowo mo¿e byæ rozwa¿any na ró¿nych poziomach abstrakcji, w zale¿noœci od przeznaczenia modelu.
  
 %---------------------------------------------------------------------------
 
 \section{Cele pracy}
 \label{sec:celePracy}
 
-Celem wykonywanego projektu jest stworzenie modelu oraz symulacja ruchu ludzi w centrum handlowym w oparciu miêdzy innymi o model \emph{Social Distances} (\cite{WaGuMa06, Kar09}).
+Celem niniejszego projektu jest opracowanie modelu ruchu ludzi w centrum handlowym oraz stworzenie na jego podstawie symulacji komputerowej, która pozwoli oceniæ jakoœæ modelu.
 
-Modelowanie ruchu du¿ych grup ludzi w œrodowisku centrum handlowego jest problemem z³o¿onym i wymaga wykorzystania równie z³o¿onych algorytmów celem dok³adnego przybli¿enia rzeczywistych zachowañ. Dobrym podejœciem jest dekompozycja problemu modelowania z³o¿onego zjawiska na mniejsze, ³atwiejsze do rozwi¹zania podproblemy, którymi zajmuj¹ siê osobne, dobrze zdefiniowane i wyspecjalizowane algorytmy, i ponowne po³¹czenie wyników ich dzia³ania w spójn¹ ca³oœæ - metoda \emph{Divide and Conquer}.
-
-    \begin{figure}[H]
-        \centering
-        \includegraphics[scale=0.3]{./img/Overview.pdf}
-        \caption{Przyk³adowa dekompozycja problemu modelowania ruchu ludzi w centrum handlowym.}
-        \label{fig:decomp}
-    \end{figure}
-
-W zale¿noœci od domeny rozwi¹zywanego problemu dekompozycja mo¿e zachodziæ ze wzglêdu na wiele czynników i dotyczyæ ró¿nych aspektów problemu - np. podzia³ wejœciowego zbioru danych na dwa mniejsze podzbiory w algorytmie \emph{Quick sort}, czy podzia³ modelu ruchu ludzi na elementarne zachowania, jak \emph{kolejkowanie}, \emph{atrakcja} lub \emph{oczekiwanie}.
-
-Na rysunku \ref{fig:decomp} zosta³a przedstawiona przyk³adowa dekompozycja problemu poruszanego w tym dokumencie. Wyszczególniono w niej podzia³ na globaln¹, preferowan¹ œcie¿kê wiod¹c¹ poruszaj¹cego siê po centrum handlowym agenta do obranych przez niego celów i lokalny ruch zgodny z gradientem ruchu obliczonym na podstawie jego otoczenia. Dodatkowo zastosowano podzia³ na specjalne strefy odpowiedzialne za modelowanie elementarnych zachowañ ludzi w centrach handlowych, takie jak strefy kolejek, czekania i gromadzenia siê, które realizowane s¹ za pomoc¹ innych modeli ruchu.
- 
 %---------------------------------------------------------------------------
 
-\section[]{State of the art}
-\label{sec:sota}
+\section{Zawartoœæ pracy}
+\label{sec:zawartoscPracy}
 
-\noindent
-Zagadnienie modelowania ruchu ludzi jest od d³ugiego czasu postrzegane jako istotne z punktu widzenia sektora us³ug. Ju¿ w latach 80. XX wieku Aloys Borgers i Harry Timmermans zajmowali siê modelowaniem ruchu pieszych w œrodowisku centrum handlowego w oparciu o modele probabilistyczne (\cite{BoTi86}).
-Na przestrzeni lat modele ruchu pieszych ewoluowa³y w ró¿nych kierunkach, jak dynamika p³nów (\cite{Hel92}), automaty komórkowe (\cite{BlAd01}), algorytmy genetyczne (\cite{KiBa04}) czy te¿ modele oparte o systemy wieloagentowe (\cite{RaSchSch11}). \\
-[TODO] Który kierunek wybraliœmy i dlaczego? \\
-
-Praca \emph{Cellular automata microsimulation for modeling bi-directional pedestrian walkways} \linebreak (\cite{BlAd01}) skupia siê na modelowaniu dwukierunkowego ruchu ludzi z wykorzystaniem automatów komórkowych. Jej autorzy pokazuj¹, w jaki sposób automat komórkowy ze stosunkowo ma³¹ liczb¹ regu³ jest zdolny do symulowania skomplikowanych zachowañ, które dobrze oddaj¹ rzeczywistoœæ. Zaproponowany model i algorytm \textbf{CA-ped} pozwalaj¹ symulowaæ ruch ludzi w dwóch przeciwnych kierunkach na dwóch oddzielnych jak i mieszanych pasach ruchu, a tak¿e dynamicznych, wieloliniowych (\emph{dynamic multi-lane, DML}) pasach ruchu.
-[TODO] W jakim celu zosta³ stworzony algorytm Ped-4? \\
-
-Algorytm \textbf{CA-ped} wyró¿nia dwie fazy ruchu, z których ka¿da charakteryzuje siê trzema prostymi zasadami:
-
-\begin{enumerate}
-    \item Zmiana pasa ruchu
-        \begin{itemize}
-            \item Eliminacja konfliktów - dwóch przechodniów nie mo¿e znajdowaæ siê na jednej komórce, w przypadku konfliktu wolna komórka oddzielaj¹ca dwóch przechodniów jest przyznawana jednemu z nich z równym prawdopodobieñstwiem.
-            \item Identyfikacja wolnych przestrzeni - wybierany jest ten pas ruchu, który cechuje najwiêksza liczba wolnych komórek, co implikuje bezproblemowy ruch w przysz³oœci.
-            \item Zmiana pasa - ka¿dy przechodzieñ jest poruszany na jeden z dwóch s¹siednich pasów, lub pozostaje na obecnym pasie ruchu.
-        \end{itemize}
-    \item Ruch do przodu
-        \begin{itemize}
-          \item Obliczanie szybkoœci ruchu - dla ka¿dego przechodnia obliczana jest jego szybkoœæ uzale¿niona od istnienia, b¹dŸ nie, wolnych komórek w jego otoczeniu.
-          \item Wymijanie - jeœli bezpoœrednio przed przechodniem w niedu¿ej odleg³oœci istnieje przeciwstawny przechodzieñ, to z zadanym prawdopodobieñstwiem nastêpuje wyminiêcie obu przechodniów.
-          \item Ruch - ka¿dy przechodzieñ jest przemieszczany do przodu zgodnie z szybkoœci¹ jego ruchu.
-        \end{itemize}
-\end{enumerate}
-
-\emph{Pedestrian behaviour modelling - An application to Retail Movements using a Genetic Algorithm} (\cite{KiBa04}) identifikuje problemy i nieœcis³oœci wynikaj¹ce ze stosowania modeli opartych o najkrótsze œcie¿ki (\emph{shortest-paths}) i maksymalizacjê przydatnoœci (\emph{utility-maximization}) do symulowania ruchu ludzi w centrum handlowym. Specjalnie zaprojektowany algorytm genetyczny wykorzystuje informacje o optymalnych œcie¿kach i mapê routingu i atrybutów konkretnych miejsc centrum handlowego do znalezienia mniej optymalnych œcie¿ek prowadz¹cych agentów do wybranych przez nich sklepów, które lepiej modeluj¹ zachowanie ludzi w œrodowisku centrum handlowego.
-
-Na podstawie spo³ecznych i ekonomicznych atrybutów poszczególnych miejsc centrum handlowego i atrybutów ludzi przebywaj¹cych w centrum handlowym, takich jak szybkoœæ, wiek, p³eæ i przychód, oraz korzystaj¹c z mapy routing algorytm wyznacza listê miejsc zainteresowania, które kupuj¹cy planuj¹ odwiedziæ. Nastêpnie z u¿yciem algorytmu genetycznego wyznaczane s¹ œcie¿ki obejmuj¹ce wszystkie miejsca zainteresowania konkretnego kupuj¹cego, które zostaj¹ wykorzystane w dalszej czêœci symulacji.
-Istotnym jest wyszczególnienie fazy ruchu lokalnego, gdzie zachodz¹ dodatkowe zjawiska, których nie obejmuje zasiêg zastosowanego algorytmu genetycznego. Wspomniane zjawiska to \emph{omijanie przeszkód} (\emph{collision avoidance}) wystêpuj¹cych w lokalnym otoczeniu poruszaj¹cego siê cz³owika oraz \emph{grupowanie siê} (\emph{flocking}), czyli skomplikowane zjawisko przyci¹gania kupuj¹cego do grup innych kupuj¹cych zgodnie z jego socjologicznymi preferencjami. \\
-
-\emph{The Simulated Consumer - an Agent-based approach to Shopping Behaviour} \linebreak (\cite{RaSchSch11}) identyfikuje istnienie du¿ej liczby ró¿nych schematów zachowañ i szeroki zakres problemu modelowania ruchu ludzi w centrum handlowym proponuj¹c podejœcie agentowe jako dostatecznie elastyczn¹ metodê modelowania skomplikowanej dynamiki kupuj¹cych. W oparciu o skorelowane w niewielkim stopniu dane pochodz¹ce z pó³nocy Szwecji i po³udnia Niemiec autorzy definiuj¹ agentowy model wyboru miejsc zainteresowania, który nastêpnie z powodzeniem stosuj¹ do symulowania zachowania kupuj¹cych w dwóch ró¿nych sektorach - spo¿ywczym i odzie¿owym, jednoczeœnie potwierdzaj¹ elastycznoœæ zaproponowanego modelu. \\
-
-Wiêcej interesuj¹cych publikacji zwi¹zanych z tematyk¹ tego projektu zawarto w secji \ref{sec:refs}.
+G³ówna czêœæ pracy sk³ada siê z piêciu rozdzia³ów. W rozdziale 2 dokonano przegl¹du ró¿nych podejœæ do zagadnienia modelowania przemieszczania siê pieszych. W rozdziale 3 przedstawiono stworzony na potrzeby projektu model centrum handlowego. W rozdziale 4 omówiono algorytmy stosowane do modelowania ruchu pieszych. Rozdzia³ 5 zawiera opisy szczegó³ów implementacyjnych. Rozdzia³ 6 prezentuje wyniki symulacji i ich analizê.
