@@ -41,9 +41,9 @@ public class ResourceManager {
 	 * @param mallName
 	 *            name of a map to be loaded
 	 */
-	public static Mall loadShoppingMall(String mapName) {
-		String mallFile = MAPS_FOLDER_PATH + mapName + "_map.bmp";
-		String featureMap = MAPS_FOLDER_PATH + mapName + "_feat.bmp";
+	public static Mall loadShoppingMall(String mapPath) {
+		String mallFile = mapPath;
+		String featureMap = mapPath.replace("_map.", "_feat.");
 
 		Mall mall = new Mall();
 

@@ -13,14 +13,36 @@ import sim.util.video.VideoRecorder;
 
 public class MallSim {
 
-	static Thread simThread = null;
+	public static MallFrame frame = null;
+	private static String mallName = "./data/malls/sd-test_map.bmp";
 
-	private static VideoRecorder videoRecorder = new AviRecorder();
-	private static Simulation simulation = new Simulation(videoRecorder);
-	public static MallFrame frame = new MallFrame(videoRecorder);
+	private static Simulation simulation = null;
+	private static VideoRecorder videoRecorder = null;
 
 	static boolean isSuspended = false;
+	
+	static Thread simThread = null;
 
+	// Uwaga! Ważna jest kolejnosc!
+	static {
+		videoRecorder = new AviRecorder();
+		frame = new MallFrame(videoRecorder);
+		simulation = new Simulation(videoRecorder);
+		
+	}
+
+
+	public static MallFrame getFrame() {
+		return frame;
+	}
+
+	public static GUIBoard getGUIBoard() {
+		return (frame != null) ? frame.getBoard() : null;
+	}
+
+	synchronized public static boolean getThreadState() {
+		return isSuspended;
+	}
 
 	/**
 	 * Launch the application.
@@ -41,12 +63,8 @@ public class MallSim {
 		});
 	}
 
-	public static MallFrame getFrame() {
-		return frame;
-	}
-
 	public static void runSimulation() {
-		Mall mall = ResourceManager.loadShoppingMall("sd-test");
+		Mall mall = ResourceManager.loadShoppingMall(mallName);
 		simulation.setMall(mall);
 
 		frame.setMall(simulation.getMall());
@@ -68,6 +86,14 @@ public class MallSim {
 			simThread.suspend();
 	}
 
+	public static void setMallName(String mallName) {
+		MallSim.mallName = mallName;
+	}
+
+	// public static Thread getThread() {
+	// return simThread;
+	// }
+
 	synchronized public static void setThreadState(boolean _isSuspended) {
 		isSuspended = _isSuspended;
 
@@ -75,17 +101,5 @@ public class MallSim {
 			simThread.suspend();
 		else
 			simThread.resume();
-	}
-
-	synchronized public static boolean getThreadState() {
-		return isSuspended;
-	}
-
-	// public static Thread getThread() {
-	// return simThread;
-	// }
-
-	public static GUIBoard getGUIBoard() {
-		return (frame != null) ? frame.getBoard() : null;
 	}
 }

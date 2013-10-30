@@ -10,12 +10,14 @@ import java.awt.Insets;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.io.IOException;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -38,6 +40,7 @@ import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.filechooser.FileFilter;
 
 import sim.MallSim;
 import sim.control.GuiState;
@@ -95,6 +98,37 @@ public class MallFrame extends JFrame {
 		menuBar.add(mnSimulation);
 
 		JMenuItem mntmLoadMall = new JMenuItem("Load mall...");
+		mntmLoadMall.addActionListener(new ActionListener() {
+
+			public void actionPerformed(ActionEvent arg0) {
+
+				// XXX: tymczasowe
+				File currentDirectory = new File("./data/malls");
+				JFileChooser fc = new JFileChooser(currentDirectory);
+				FileFilter filter = new FileFilter() {
+
+					@Override
+					public String getDescription() {
+						return "MALL files";
+					}
+
+					@Override
+					public boolean accept(File f) {
+						return f.isDirectory()
+								|| f.getName().matches(".*_map\\.bmp");
+					}
+				};
+				fc.setFileFilter(filter);
+
+				int returnVal = fc.showOpenDialog(null);
+
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					MallSim.setMallName(fc.getSelectedFile().getPath());
+					MallSim.runSimulation();
+				}
+
+			}
+		});
 		mnSimulation.add(mntmLoadMall);
 
 		JMenuItem mntmRestart = new JMenuItem("Restart");
@@ -105,11 +139,11 @@ public class MallFrame extends JFrame {
 				MallSim.runSimulation();
 			}
 		});
+		mnSimulation.add(mntmRestart);
 
 		JCheckBoxMenuItem chckbxmntmPaused = new JCheckBoxMenuItem(
 				new PauseResumeAction());
 		mnSimulation.add(chckbxmntmPaused);
-		mnSimulation.add(mntmRestart);
 
 		JMenuItem mntmSeed = new JMenuItem("Seed");
 		mntmSeed.addActionListener(new ActionListener() {
@@ -165,10 +199,11 @@ public class MallFrame extends JFrame {
 
 		setDefaults();
 	}
-	
+
 	public void setMall(Mall mall) {
-		guiBoard = new GUIBoard(mall.getBoard());
 		boardPanel.removeAll();
+		boardPanel.repaint();
+		guiBoard = new GUIBoard(mall.getBoard());
 		boardPanel.add(guiBoard);
 	}
 
