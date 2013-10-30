@@ -15,10 +15,20 @@ import sim.model.helpers.Rand;
 
 public final class Ped4 implements MovementAlgorithm {
 
-	private static final double changeLaneLeftProbability = 0.3;
+	private static final double changeLaneLeftProbability = 0.5;
 
 	public static enum LaneDirection {
-		NONE, WEST, EAST, EMPTY // no pedestrians
+		NONE(false), WEST(true), EAST(true), EMPTY(false); // no pedestrians
+
+		private final boolean isDirection;
+
+		LaneDirection(boolean dir) {
+			this.isDirection = dir;
+		}
+
+		public boolean isDirection() {
+			return isDirection;
+		}
 	}
 
 	private static MovementAlgorithm instance = new Ped4();
@@ -118,7 +128,7 @@ public final class Ped4 implements MovementAlgorithm {
 	 */
 	private Agent getCellAssignment(Board board, Point cellCoord) {
 		List<Agent> candidates = new ArrayList<Agent>();
-		Point p = null;
+		Point p = new Point();
 
 		// Płytka już zajęta.
 		if (board.getCell(cellCoord).getAgent() != null)
@@ -126,22 +136,22 @@ public final class Ped4 implements MovementAlgorithm {
 
 		// Wybierz tylko pieszych, których kierunek ruchu dopuszcza
 		// zejśce w bok na dane pole.
-		p = new Point(cellCoord.x - 1, cellCoord.y);
+		p.setLocation(cellCoord.x - 1, cellCoord.y);
 		if (board.isOnBoard(p) && board.getCell(p).getAgent() != null
 				&& board.getCell(p).getAgent().getDirection().isVertical())
 			candidates.add(board.getCell(p).getAgent());
 
-		p = new Point(cellCoord.x + 1, cellCoord.y);
+		p.setLocation(cellCoord.x + 1, cellCoord.y);
 		if (board.isOnBoard(p) && board.getCell(p).getAgent() != null
 				&& board.getCell(p).getAgent().getDirection().isVertical())
 			candidates.add(board.getCell(p).getAgent());
 
-		p = new Point(cellCoord.x, cellCoord.y - 1);
+		p.setLocation(cellCoord.x, cellCoord.y - 1);
 		if (board.isOnBoard(p) && board.getCell(p).getAgent() != null
 				&& board.getCell(p).getAgent().getDirection().isHorizontal())
 			candidates.add(board.getCell(p).getAgent());
 
-		p = new Point(cellCoord.x, cellCoord.y + 1);
+		p.setLocation(cellCoord.x, cellCoord.y + 1);
 		if (board.isOnBoard(p) && board.getCell(p).getAgent() != null
 				&& board.getCell(p).getAgent().getDirection().isHorizontal())
 			candidates.add(board.getCell(p).getAgent());
@@ -279,10 +289,8 @@ public final class Ped4 implements MovementAlgorithm {
 			}
 		}
 
-		int gap = Collections.min(Arrays.asList(new Integer[] {
-				w.getvMax(),
-				gapSame,
-				gapOpp }));
+		int gap = Collections.min(Arrays.asList(new Integer[] { w.getvMax(),
+				gapSame, gapOpp }));
 		return new GapReport(orientation, gap, opponent);
 	}
 

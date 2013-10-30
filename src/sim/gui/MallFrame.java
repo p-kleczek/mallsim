@@ -78,7 +78,7 @@ public class MallFrame extends JFrame {
 		Toolkit toolkit = Toolkit.getDefaultToolkit();
 		Dimension screenSize = toolkit.getScreenSize();
 
-		final double TRIM = 0.05;
+		final double TRIM = 0.05;	// odstep od krawedzi
 		setBounds((int) (screenSize.width * TRIM),
 				(int) (screenSize.height * TRIM),
 				(int) (screenSize.getWidth() * (1 - 2 * TRIM)),

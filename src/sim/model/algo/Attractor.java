@@ -9,7 +9,7 @@ public class Attractor extends MallFeature {
     /**
      * Code of color used to mark this feature on the map. 
      */
-    private int pixelValue = 0xffffff;
+    private int pixelValue = DEFAULT_PIXEL_VALUE;
 
     // TODO Compute attraction and holdTime from pv.
     public Attractor(int attraction, int holdTime, int pv) {
@@ -19,7 +19,7 @@ public class Attractor extends MallFeature {
     }
 
     public int modifyHeuristicEstimate(int score) {
-        return (attraction * score) / 0x7F;
+        return (attraction * score) / 0x7F;	// 127
     }
 
     public void performAction(Agent a) {

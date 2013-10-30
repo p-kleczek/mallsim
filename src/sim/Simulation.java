@@ -17,6 +17,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import sim.control.GuiState;
 import sim.control.TacticalWorker;
+import sim.gui.SummaryTable;
 import sim.gui.SummaryTable.Param;
 import sim.model.Agent;
 import sim.model.Agent.MovementBehavior;
@@ -266,7 +267,8 @@ public class Simulation extends Observable implements Runnable {
 
 			clearAgentsOnExits();
 
-			assessPed4();
+			// assessPed4();
+			assessSocialDistances();
 		}
 
 		nAgentSuccesses += targetsReached;
@@ -274,6 +276,28 @@ public class Simulation extends Observable implements Runnable {
 		System.out.println(String.format("Sukcesy agentów:\t %d / %d\t (%d%%)",
 				nAgentSuccesses, nTotalAgents, nAgentSuccesses * 100
 						/ nTotalAgents));
+	}
+
+	private void assessSocialDistances() {
+		Board board = mall.getBoard();
+		Point p = new Point();
+		SummaryTable summary = MallSim.getFrame().getSummaryTable();
+
+		int lost = 0;
+
+		for (int x = 0; x < board.getWidth(); x++) {
+			for (int y = 0; y < board.getHeight(); y++) {
+				p.setLocation(x, y);
+
+				Agent a = board.getCell(p).getAgent();
+				if (a != null && a.isLost())
+					lost++;
+			}
+		}
+
+		summary.setParamValue(Param.LOST, lost);
+
+		summary.nextSample();
 	}
 
 	private void prepareBoardForNextStep() {
@@ -289,13 +313,15 @@ public class Simulation extends Observable implements Runnable {
 	private void assessPed4() {
 		Board board = mall.getBoard();
 		Point p = new Point();
+		SummaryTable summary = MallSim.getFrame().getSummaryTable();
+
 		// TODO: enum map (ile kratek danego typu)
 
 		int left = 0;
 		int right = 0;
 		int none = 0;
 
-		for (int x = 0; x < board.getWidth(); x++)
+		for (int x = 0; x < board.getWidth(); x++) {
 			for (int y = 0; y < board.getHeight(); y++) {
 				p.setLocation(x, y);
 
@@ -317,21 +343,44 @@ public class Simulation extends Observable implements Runnable {
 
 				board.getCell(p).setLaneDirection(dir);
 			}
+		}
 
 		double all = left + right + none;
 
 		if (all == 0) {
-			MallSim.getFrame().getSummaryTable()
-					.setParamValue(Param.PERC_OF_FIELDS_AS_LANES, "");
+			summary.setParamValue(Param.PERC_OF_FIELDS_AS_LANES, 100.0);
 		} else {
 			double frac = (all - none) / all * 100.0;
 			BigDecimal bd = new BigDecimal(frac).setScale(2,
 					RoundingMode.HALF_EVEN);
-			MallSim.getFrame()
-					.getSummaryTable()
-					.setParamValue(Param.PERC_OF_FIELDS_AS_LANES,
-							bd.doubleValue());
+			summary.setParamValue(Param.PERC_OF_FIELDS_AS_LANES,
+					bd.doubleValue());
 		}
+
+		// Coherence - miara spójnosci alejek (niespójnosc pojawia sie, gdy
+		// jeden pas otoczony jest dwoma innymi o przeciwnym kierunku (EWE albo
+		// WEW).
+		Point p0 = new Point();
+		Point p2 = new Point();
+		int coherence = 0;
+		for (int x = 0; x < board.getWidth(); x++) {
+			for (int y = 1; y < board.getHeight() - 1; y++) {
+				p0.setLocation(x, y - 1);
+				p.setLocation(x, y);
+				p2.setLocation(x, y + 1);
+
+				LaneDirection dir1 = board.getCell(p0).getLaneDirection();
+				LaneDirection dir2 = board.getCell(p).getLaneDirection();
+				LaneDirection dir3 = board.getCell(p2).getLaneDirection();
+
+				if (dir1.isDirection() && dir2.isDirection()
+						&& dir2.isDirection() && dir1 == dir3 && dir1 != dir2)
+					coherence--;
+			}
+		}
+		summary.setParamValue(Param.LANES_COHERENCE, coherence);
+
+		summary.nextSample();
 	}
 
 	private void clearAgentsOnExits() {

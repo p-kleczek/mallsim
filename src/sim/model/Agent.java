@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Observable;
 import java.util.Properties;
 
@@ -99,6 +100,11 @@ public class Agent extends Observable {
 	 * Flaga określająca, czy Agent został usunięty z symulacji.
 	 */
 	private boolean isDead = false;
+	
+	// ------ testy
+	
+	// licznik odwiedzonych pol: x,y -> n
+	private Map<String, Integer> visitCounter = new HashMap<String, Integer>();
 
 	public Agent(Agent a) {
 		vMax = a.getvMax();
@@ -225,6 +231,8 @@ public class Agent extends Observable {
 
 		setChanged();
 		notifyObservers();
+		
+		visitCounter.clear();
 	}
 
 	public void clearTargets() {
@@ -269,6 +277,12 @@ public class Agent extends Observable {
 	public void setPosition(Point position) {
 		this.position = new MyPoint(position);
 
+		String key = position.x + "," + position.y;
+		Integer value = visitCounter.get(key);
+		value = (value == null) ? 1 : (value + 1);
+		
+		visitCounter.put(key, value);
+		
 		setChanged();
 		notifyObservers();
 	}
@@ -306,4 +320,16 @@ public class Agent extends Observable {
 		return isDead;
 	}
 
+	/**
+	 * Czy agent "kreci sie w kolko"?
+	 * @return
+	 */
+	public boolean isLost() {
+		for (Entry<String, Integer> e : visitCounter.entrySet()) {
+			if (e.getValue() > 2)
+				return true;
+		}
+		
+		return false;
+	}
 }

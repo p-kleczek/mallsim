@@ -71,6 +71,8 @@ public class MallSim {
 		frame.setVisible(true);
 
 		videoRecorder.setSource(frame);
+		
+		frame.getSummaryTable().clear();
 
 		
 		simulation.addObserver(frame.getBoard());
