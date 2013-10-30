@@ -24,6 +24,7 @@ import sim.model.Board;
 import sim.model.Mall;
 import sim.model.algo.Ped4.LaneDirection;
 import sim.model.helpers.Direction;
+import sim.model.helpers.MyPoint;
 import sim.model.helpers.Rand;
 import sim.util.video.VideoRecorder;
 
@@ -348,8 +349,9 @@ public class Simulation extends Observable implements Runnable {
 												// agent.getTargetCount() == 0;
 				boolean isAgentNearExit = agent != null
 						&& agent.getTargetCount() == 0;
-				if (isAgentOnExit || isAgentNearExit)
-					board.getCell(p).setAgent(null);
+				if (isAgentOnExit || isAgentNearExit) {
+					board.setAgent(null, p);
+				}
 			}
 		}
 	}

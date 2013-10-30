@@ -44,6 +44,10 @@ public class Cell {
 		return agent;
 	}
 
+	/**
+	 * Używac tej metody tylko w najbardziej niskopoziomowych operacjach.
+	 * @param agent
+	 */
 	public void setAgent(Agent agent) {
 		this.agent = agent;
 	}
