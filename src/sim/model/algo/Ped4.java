@@ -15,6 +15,8 @@ import sim.model.helpers.Rand;
 
 public final class Ped4 implements MovementAlgorithm {
 
+	private static final double changeLaneLeftProbability = 0.3;
+
 	public static enum LaneDirection {
 		NONE, WEST, EAST, EMPTY // no pedestrians
 	}
@@ -319,7 +321,7 @@ public final class Ped4 implements MovementAlgorithm {
 						if (p.add(opponent.getDirection().getVec())
 								.equals(dest)) {
 							// konflikt
-							if (Math.random() < 0.5) {
+							if (Math.random() < changeLaneLeftProbability) {
 								board.swapAgent(curr, dest);
 								mpLeft.put(agent, mpLeft.get(agent) - 1);
 								agent.incrementFieldsMoved();

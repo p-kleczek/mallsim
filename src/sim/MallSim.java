@@ -14,13 +14,14 @@ import sim.util.video.VideoRecorder;
 public class MallSim {
 
 	static Thread simThread = null;
-	static MallFrame frame = null;
+	public static MallFrame frame = null;
+
 	private static Simulation simulation = null;
 
 	static boolean isSuspended = false;
 
 	private static VideoRecorder videoRecorder = new AviRecorder();
-	
+
 	/**
 	 * Launch the application.
 	 */
@@ -41,6 +42,10 @@ public class MallSim {
 		});
 	}
 
+	public static MallFrame getFrame() {
+		return frame;
+	}
+
 	private static void prepare() {
 		simulation = new Simulation(videoRecorder);
 		Mall mall = ResourceManager.loadShoppingMall("ped4-test");
@@ -48,7 +53,7 @@ public class MallSim {
 
 		frame = new MallFrame(simulation.getMall(), videoRecorder);
 		frame.setVisible(true);
-		
+
 		videoRecorder.setSource(frame);
 	}
 

@@ -1,6 +1,8 @@
 package sim;
 
 import java.awt.Point;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -15,6 +17,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import sim.control.GuiState;
 import sim.control.TacticalWorker;
+import sim.gui.SummaryTable.Param;
 import sim.model.Agent;
 import sim.model.Agent.MovementBehavior;
 import sim.model.Board;
@@ -22,7 +25,6 @@ import sim.model.Mall;
 import sim.model.algo.Ped4.LaneDirection;
 import sim.model.helpers.Direction;
 import sim.model.helpers.Rand;
-import sim.util.video.AviRecorder;
 import sim.util.video.VideoRecorder;
 
 import com.google.common.collect.Iterables;
@@ -287,12 +289,31 @@ public class Simulation extends Observable implements Runnable {
 		Board board = mall.getBoard();
 		Point p = new Point();
 		// TODO: enum map (ile kratek danego typu)
+		
+		int left = 0;
+		int right = 0;
+		int none = 0;
 
 		for (int x = 0; x < board.getWidth(); x++)
 			for (int y = 0; y < board.getHeight(); y++) {
 				p.setLocation(x, y);
-				board.getCell(p).setLaneDirection(assessRow(y, x));
+				
+				LaneDirection dir = assessRow(y, x);
+				
+				switch (dir) {
+				case EAST: right++; break;
+				case WEST: left++; break;
+				case NONE: none++; break;
+				default:
+					break;
+				}
+				
+				board.getCell(p).setLaneDirection(dir);
 			}
+		
+		double frac = (left+right)/(double)(left+right+none)*100.0;
+		BigDecimal bd = new BigDecimal(frac).setScale(2, RoundingMode.HALF_EVEN);
+		MallSim.getFrame().getSummaryTable().setParamValue(Param.PERC_OF_FIELDS_AS_LANES, bd.doubleValue());
 	}
 
 	private void clearAgentsOnExits() {

@@ -50,7 +50,6 @@ import sim.model.Mall;
 import sim.model.helpers.Rand;
 import sim.util.Logger;
 import sim.util.Logger.Level;
-import sim.util.video.AviRecorder;
 import sim.util.video.VideoRecorder;
 
 @SuppressWarnings("serial")
@@ -59,6 +58,7 @@ public class MallFrame extends JFrame {
 	private JPanel contentPane;
 	private GUIBoard guiBoard;
 	private PropertiesTable propertiesTable;
+	private SummaryTable summaryTable;
 	private JScrollPane boardScrollPane;
 	private final VideoRecorder videoRecorder;
 
@@ -121,7 +121,9 @@ public class MallFrame extends JFrame {
 					Rand.seed = newSeed;
 					Rand.setSeed(newSeed);
 				} catch (NumberFormatException e) {
-					Logger.log("ERROR: Could not change seed (NumberFormatException)", Level.ERROR);
+					Logger.log(
+							"ERROR: Could not change seed (NumberFormatException)",
+							Level.ERROR);
 				}
 			}
 		});
@@ -152,6 +154,58 @@ public class MallFrame extends JFrame {
 		tabbedPane.setSelectedIndex(-1);
 		splitPane.setRightComponent(tabbedPane);
 
+		createDisplayTab(tabbedPane);
+		createPropertiesTab(mall, splitPane, tabbedPane);
+		createSummaryTab(tabbedPane);
+
+		createBoardPanel(mall, splitPane);
+
+		tabbedPane.setSelectedIndex(2);
+
+		setDefaults();
+	}
+
+	private void createBoardPanel(Mall mall, JSplitPane splitPane) {
+		boardScrollPane = new JScrollPane();
+		boardScrollPane
+				.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+		boardScrollPane
+				.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+		splitPane.setLeftComponent(boardScrollPane);
+
+		JPanel boardPanel = new JPanel();
+		boardScrollPane.setViewportView(boardPanel);
+
+		guiBoard = new GUIBoard(mall.getBoard());
+		boardPanel.add(guiBoard);
+	}
+
+	private void createSummaryTab(JTabbedPane tabbedPane) {
+		JPanel propertiesPanel = new JPanel();
+		tabbedPane.addTab("Summary", null, propertiesPanel, null);
+		GridBagLayout gbl_propertiesPanel = new GridBagLayout();
+		gbl_propertiesPanel.columnWidths = new int[] { 1, 0 };
+		gbl_propertiesPanel.rowHeights = new int[] { 1, 0 };
+		gbl_propertiesPanel.columnWeights = new double[] { 1.0,
+				Double.MIN_VALUE };
+		gbl_propertiesPanel.rowWeights = new double[] { 0.0, Double.MIN_VALUE };
+		propertiesPanel.setLayout(gbl_propertiesPanel);
+
+		boardScrollPane = new JScrollPane();
+		boardScrollPane
+				.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+		boardScrollPane
+				.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+
+		summaryTable = new SummaryTable();
+		GridBagConstraints gbc_propertiesTable = new GridBagConstraints();
+		gbc_propertiesTable.fill = GridBagConstraints.HORIZONTAL;
+		gbc_propertiesTable.gridx = 0;
+		gbc_propertiesTable.gridy = 0;
+		propertiesPanel.add(summaryTable, gbc_propertiesTable);
+	}
+
+	private void createDisplayTab(JTabbedPane tabbedPane) {
 		JPanel tabDisplay = new JPanel();
 		tabbedPane.addTab("Display", null, tabDisplay, null);
 		GridBagLayout gbl_tabDisplay = new GridBagLayout();
@@ -348,8 +402,8 @@ public class MallFrame extends JFrame {
 			public void stateChanged(ChangeEvent e) {
 				JSpinner s = (JSpinner) e.getSource();
 
-				MallFrame.this.videoRecorder.setSimFramesPerAviFrame((Integer) s
-						.getValue());
+				MallFrame.this.videoRecorder
+						.setSimFramesPerAviFrame((Integer) s.getValue());
 			}
 		});
 		panel.add(spinner);
@@ -391,7 +445,10 @@ public class MallFrame extends JFrame {
 		default:
 			break;
 		}
+	}
 
+	private void createPropertiesTab(Mall mall, JSplitPane splitPane,
+			JTabbedPane tabbedPane) {
 		JPanel propertiesPanel = new JPanel();
 		tabbedPane.addTab("Properties", null, propertiesPanel, null);
 		GridBagLayout gbl_propertiesPanel = new GridBagLayout();
@@ -402,31 +459,14 @@ public class MallFrame extends JFrame {
 		gbl_propertiesPanel.rowWeights = new double[] { 0.0, Double.MIN_VALUE };
 		propertiesPanel.setLayout(gbl_propertiesPanel);
 
-		boardScrollPane = new JScrollPane();
-		boardScrollPane
-				.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-		boardScrollPane
-				.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
-		splitPane.setLeftComponent(boardScrollPane);
-
-		JPanel boardPanel = new JPanel();
-		boardScrollPane.setViewportView(boardPanel);
-
-		guiBoard = new GUIBoard(mall.getBoard());
-		boardPanel.add(guiBoard);
-
 		propertiesTable = new PropertiesTable();
 		GridBagConstraints gbc_propertiesTable = new GridBagConstraints();
 		gbc_propertiesTable.fill = GridBagConstraints.HORIZONTAL;
 		gbc_propertiesTable.gridx = 0;
 		gbc_propertiesTable.gridy = 0;
 		propertiesPanel.add(propertiesTable, gbc_propertiesTable);
-
-		tabbedPane.setSelectedIndex(0);
-		
-		setDefaults();
 	}
-	
+
 	private void setDefaults() {
 		GuiState.backgroundPolicy = BackgroundPolicy.LANES;
 	}
@@ -437,6 +477,10 @@ public class MallFrame extends JFrame {
 
 	public PropertiesTable getPropertiesTable() {
 		return propertiesTable;
+	}
+
+	public SummaryTable getSummaryTable() {
+		return summaryTable;
 	}
 
 	public JScrollPane getScrollPane() {
