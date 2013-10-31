@@ -10,6 +10,8 @@ import java.awt.Insets;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.io.File;
 import java.io.IOException;
 
@@ -163,6 +165,16 @@ public class MallFrame extends JFrame {
 			}
 		});
 		mnSimulation.add(mntmSeed);
+		
+		JCheckBoxMenuItem mntmTestMode = new JCheckBoxMenuItem("Test mode");
+		mntmTestMode.addItemListener(new ItemListener() {
+			
+			@Override
+			public void itemStateChanged(ItemEvent e) {
+				GuiState.isTestMode = e.getStateChange() == ItemEvent.SELECTED;
+			}
+		});
+		mnSimulation.add(mntmTestMode);		
 
 		JMenu mnHelp = new JMenu("Help");
 		mnHelp.setMnemonic('H');

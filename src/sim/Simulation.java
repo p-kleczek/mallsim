@@ -25,7 +25,6 @@ import sim.model.Board;
 import sim.model.Mall;
 import sim.model.algo.Ped4.LaneDirection;
 import sim.model.helpers.Direction;
-import sim.model.helpers.MyPoint;
 import sim.model.helpers.Rand;
 import sim.util.video.VideoRecorder;
 
@@ -47,7 +46,7 @@ public class Simulation extends Observable implements Runnable {
 	 * Interval (= number of simulation steps) between appearance of a next
 	 * agent.
 	 */
-	private int AGENT_GENERATION_INTERVAL = 1;
+	private final double NEW_AGENTS_PER_ITERATION = 4.1;
 
 	/**
 	 * Maximal number of people in a mall as a percentage of accessible area.
@@ -71,12 +70,10 @@ public class Simulation extends Observable implements Runnable {
 
 	private int stepCounter = 0;
 
-	/**
-	 * Index of the last step when an agent has been generated.
-	 */
-	private int lastGenerationStep = 0;
-
 	private BlockingQueue<Agent> agentsToCompute = new LinkedBlockingQueue<>(1);
+
+	// Aktualny stan "puli" nowych agentów.
+	private double newAgentLevel = 0.0;
 
 	public Simulation(VideoRecorder videoRecorder) {
 		super();
@@ -251,7 +248,7 @@ public class Simulation extends Observable implements Runnable {
 			if (stepCounter % videoRecorder.getSimFramesPerAviFrame() == 0)
 				videoRecorder.recordFrame();
 
-			generateAgent();
+			generateAgents();
 
 			targetsReached = computeTargetReached();
 
@@ -453,33 +450,36 @@ public class Simulation extends Observable implements Runnable {
 		t.setStopped();
 	}
 
-	private void generateAgent() {
+	private void generateAgents() {
 		Board board = mall.getBoard();
 
-		boolean isTooEarly = stepCounter - lastGenerationStep < AGENT_GENERATION_INTERVAL;
-		boolean isTooCrowdy = board.countAgents()
-				/ (double) board.getAccessibleFieldCount() >= MAX_CROWD_FACTOR;
+		newAgentLevel += NEW_AGENTS_PER_ITERATION;
 
-		if (isTooEarly || isTooCrowdy)
-			return;
+		while (newAgentLevel >= 1.0) {
+			boolean isTooCrowdy = board.countAgents()
+					/ (double) board.getAccessibleFieldCount() >= MAX_CROWD_FACTOR;
 
-		List<Point> ioPoints = board.getIoPoints();
-
-		// Select an empty field.
-		Collections.shuffle(ioPoints);
-		for (Point p : ioPoints) {
-			if (board.getCell(p).getAgent() == null) {
-				Agent agent = new Agent(MovementBehavior.AVERAGE);
-				board.setAgent(agent, p);
-				computePaths(agent);
-
-				// TODO: wyznaczyć zachowanie agenta
-
+			if (isTooCrowdy)
 				break;
-			}
-		}
 
-		lastGenerationStep = stepCounter;
+			List<Point> ioPoints = board.getIoPoints();
+
+			// Select an empty field.
+			Collections.shuffle(ioPoints);
+			for (Point p : ioPoints) {
+				if (board.getCell(p).getAgent() == null) {
+					Agent agent = new Agent(MovementBehavior.AVERAGE);
+					board.setAgent(agent, p);
+					computePaths(agent);
+
+					// TODO: wyznaczyć zachowanie agenta
+
+					break;
+				}
+			}
+			
+			newAgentLevel -= 1.0;
+		}
 	}
 
 	private void testAssessment() {

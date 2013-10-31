@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
 
+import sim.control.GuiState;
 import sim.model.Agent;
 import sim.model.Board;
 import sim.model.helpers.Rand;
@@ -101,7 +102,9 @@ public class Tactical {
 		}
 
 		// FIXME: na czas testów (agent ma wchodzić na pole I/O)
-		agent.addTarget(targets[0]);
+		if (GuiState.isTestMode) {
+			agent.addTarget(targets[0]);
+		}
 	}
 
 	public static Point[] pickTargets(Board board, Agent agent, int numTargets) {
