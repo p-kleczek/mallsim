@@ -14,6 +14,8 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.File;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -53,8 +55,6 @@ import sim.gui.actions.ExitAction;
 import sim.gui.actions.PauseResumeAction;
 import sim.model.Mall;
 import sim.model.helpers.Rand;
-import sim.util.Logger;
-import sim.util.Logger.Level;
 import sim.util.video.VideoRecorder;
 
 @SuppressWarnings("serial")
@@ -68,6 +68,9 @@ public class MallFrame extends JFrame {
 	private final VideoRecorder videoRecorder;
 	private JPanel boardPanel = new JPanel();
 
+	private final static Logger LOGGER = Logger
+			.getLogger(Logger.GLOBAL_LOGGER_NAME);
+
 	/**
 	 * Create the frame.
 	 */
@@ -80,7 +83,7 @@ public class MallFrame extends JFrame {
 		Toolkit toolkit = Toolkit.getDefaultToolkit();
 		Dimension screenSize = toolkit.getScreenSize();
 
-		final double TRIM = 0.05;	// odstep od krawedzi
+		final double TRIM = 0.05; // odstep od krawedzi
 		setBounds((int) (screenSize.width * TRIM),
 				(int) (screenSize.height * TRIM),
 				(int) (screenSize.getWidth() * (1 - 2 * TRIM)),
@@ -158,23 +161,21 @@ public class MallFrame extends JFrame {
 					Rand.seed = newSeed;
 					Rand.setSeed(newSeed);
 				} catch (NumberFormatException e) {
-					Logger.log(
-							"ERROR: Could not change seed (NumberFormatException)",
-							Level.ERROR);
+					LOGGER.severe("Could not change seed (NumberFormatException)");
 				}
 			}
 		});
 		mnSimulation.add(mntmSeed);
-		
+
 		JCheckBoxMenuItem mntmTestMode = new JCheckBoxMenuItem("Test mode");
 		mntmTestMode.addItemListener(new ItemListener() {
-			
+
 			@Override
 			public void itemStateChanged(ItemEvent e) {
 				GuiState.isTestMode = e.getStateChange() == ItemEvent.SELECTED;
 			}
 		});
-		mnSimulation.add(mntmTestMode);		
+		mnSimulation.add(mntmTestMode);
 
 		JMenu mnHelp = new JMenu("Help");
 		mnHelp.setMnemonic('H');

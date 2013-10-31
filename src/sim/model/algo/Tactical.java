@@ -8,13 +8,12 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
+import java.util.logging.Logger;
 
 import sim.control.GuiState;
 import sim.model.Agent;
 import sim.model.Board;
 import sim.model.helpers.Rand;
-import sim.util.Logger;
-import sim.util.Logger.Level;
 
 public class Tactical {
 	/**
@@ -36,6 +35,9 @@ public class Tactical {
 	 * If a segment would be smaller than this threshold then all points
 	 */
 	public static final int PATH_SMOOTHING = 3;
+	
+	private final static Logger LOGGER = Logger
+			.getLogger(Logger.GLOBAL_LOGGER_NAME);
 
 	interface NeighborLookupAlgorithm {
 		boolean isNeighbor(Point a, Point b);
@@ -67,17 +69,17 @@ public class Tactical {
 			NeighborLookupAlgorithm algorithm) {
 		int numTargets = MIN_TARGETS + Rand.nextInt(MAX_TARGETS - MIN_TARGETS);
 
-		Logger.log(String.format("Initializing targets for %s...", agent), Level.INFO);
+		LOGGER.info(String.format("Initializing targets for %s...", agent));
 
 		Point[] targets = pickTargets(board, agent, numTargets);
 
-		Logger.log(String.format("Picked %d target positions.", targets.length), Level.INFO);
-		Logger.log("Generating paths...", Level.INFO);
+		LOGGER.info(String.format("Picked %d target positions.", targets.length));
+		LOGGER.info("Generating paths...");
 
 		computePaths(board, agent, algorithm, targets);
 
-		Logger.log("Paths generated!", Level.INFO);
-		Logger.log("Targets initialized!", Level.INFO);
+		LOGGER.info("Paths generated!");
+		LOGGER.info("Targets initialized!");
 	}
 
 	/**

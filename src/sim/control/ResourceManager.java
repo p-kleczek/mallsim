@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 
@@ -22,8 +23,6 @@ import sim.model.algo.Ped4;
 import sim.model.algo.SocialForce;
 import sim.model.algo.Spawner;
 import sim.model.helpers.Rand;
-import sim.util.Logger;
-import sim.util.Logger.Level;
 
 public class ResourceManager {
 	public static final int MALL_WALL = 0x0;
@@ -34,6 +33,9 @@ public class ResourceManager {
 	public static final int MAP_SPAWNER = 0xFF;
 
 	public static final String MAPS_FOLDER_PATH = "./data/malls/";
+
+	private final static Logger LOGGER = Logger
+			.getLogger(Logger.GLOBAL_LOGGER_NAME);
 
 	/**
 	 * Loads shopping mall data from an image file.
@@ -47,8 +49,8 @@ public class ResourceManager {
 
 		Mall mall = new Mall();
 
-		Logger.log("Loading mall: " + mallFile + " with featuremap: "
-				+ featureMap, Level.INFO);
+		LOGGER.info("Loading mall: " + mallFile + " with featuremap: "
+				+ featureMap);
 
 		BufferedImage mallImage = null;
 		BufferedImage mapImage = null;
@@ -89,8 +91,7 @@ public class ResourceManager {
 			// Used to cache Attractors
 			HashMap<Integer, MallFeature> features = new HashMap<Integer, MallFeature>();
 
-			Logger.log("Creating board...", Level.INFO);
-
+			LOGGER.info("Creating board...");
 
 			int accessibleFieldsCounter = 0;
 			List<Point> ioPoints = new ArrayList<>();
@@ -145,32 +146,32 @@ public class ResourceManager {
 							break;
 						}
 					}
-					
+
 					if (grid[i][j].isPassable())
 						accessibleFieldsCounter++;
-					
+
 					p.setLocation(j, i);
 					if (grid[i][j].getFeature() instanceof Spawner)
 						ioPoints.add(new Point(j, i));
 				}
 			}
-			
+
 			mall.getBoard().setAccessibleFieldCount(accessibleFieldsCounter);
 			mall.getBoard().setIoPoints(ioPoints);
-			
+
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 
-		Logger.log("Board created!", Level.INFO);
+		LOGGER.info("Board created!");
 
-		Logger.log("Randomizing board...", Level.INFO);
+		LOGGER.info("Randomizing board...");
 
 		randomize(b, h * w / 250);
 
-		Logger.log("Board randomized!", Level.INFO);
+		LOGGER.info("Board randomized!");
 
-		Logger.log("Mall loaded!", Level.INFO);
+		LOGGER.info("Mall loaded!");
 
 		return mall;
 	}
