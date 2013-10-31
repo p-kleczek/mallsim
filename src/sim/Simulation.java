@@ -1,10 +1,17 @@
 package sim;
 
 import java.awt.Point;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -14,6 +21,7 @@ import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Logger;
 
 import sim.control.GuiState;
 import sim.control.TacticalWorker;
@@ -26,6 +34,7 @@ import sim.model.Mall;
 import sim.model.algo.Ped4.LaneDirection;
 import sim.model.helpers.Direction;
 import sim.model.helpers.Rand;
+import sim.util.WriterUtils;
 import sim.util.video.VideoRecorder;
 
 import com.google.common.collect.Iterables;
@@ -75,9 +84,34 @@ public class Simulation extends Observable implements Runnable {
 	// Aktualny stan "puli" nowych agentów.
 	private double newAgentLevel = 0.0;
 
+	private BufferedWriter logWriter = null;
+
+	private final static Logger LOGGER = Logger
+			.getLogger(Logger.GLOBAL_LOGGER_NAME);
+
 	public Simulation(VideoRecorder videoRecorder) {
 		super();
 		this.videoRecorder = videoRecorder;
+	}
+
+	public void configureLogFile() {
+		if (logWriter != null) {
+			try {
+				logWriter.close();
+			} catch (IOException e) {
+			}
+		}
+
+		File logFile = new File("./logs/" + System.currentTimeMillis() + ".csv");
+		Charset charset = Charset.forName("US-ASCII");
+		try {
+			logWriter = Files.newBufferedWriter(logFile.toPath(), charset);
+			logWriter
+					.write("\"% of fields as lanes\";\"lanes coherence\";\"lost\";\"avg dist\"\r\n");
+		} catch (IOException e) {
+			LOGGER.severe("Could not open log file for writing.");
+		}
+
 	}
 
 	public Mall getMall() {
@@ -109,20 +143,13 @@ public class Simulation extends Observable implements Runnable {
 
 				if (agent.getTargetCount() > 0) {
 					if (agent.getTarget().equals(curr)) {
-						agent.reachTarget();
-						if (agent.getTargetCount() > 0)
-							agent.setInitialDistanceToTarget(curr
-									.distanceSq(agent.getTarget()));
+						reachTarget(agent);
 					} else {
 						double dist = agent.getTarget().distance(curr);
 						if (dist < MAX_DISTANCE_FROM_TARGET) {
 							// TODO: metoda probabilistyczna
 							if (Rand.nextDouble() < 1 / (dist * dist)) {
-								agent.reachTarget();
-
-								if (agent.getTargetCount() > 0)
-									agent.setInitialDistanceToTarget(curr
-											.distanceSq(agent.getTarget()));
+								reachTarget(agent);
 							}
 						}
 					}
@@ -134,6 +161,18 @@ public class Simulation extends Observable implements Runnable {
 		}
 
 		return targetsReached;
+	}
+
+	private void reachTarget(Agent agent) {
+		Point p = agent.getPosition();
+		agent.reachTarget();
+		if (agent.getTargetCount() > 0) {
+			Point t = agent.getTarget();
+
+			// metryka miejska
+			int dist = Math.abs(p.x - t.x) + Math.abs(p.y - t.y);
+			agent.setInitialDistanceToTarget(dist);
+		}
 	}
 
 	/**
@@ -264,7 +303,7 @@ public class Simulation extends Observable implements Runnable {
 
 			clearAgentsOnExits();
 
-			// assessPed4();
+			assessPed4();
 			assessSocialDistances();
 		}
 
@@ -281,20 +320,49 @@ public class Simulation extends Observable implements Runnable {
 		SummaryTable summary = MallSim.getFrame().getSummaryTable();
 
 		int lost = 0;
+		double avgWalkingDistance = 0.0;
+		int nAgents = 0;
 
 		for (int x = 0; x < board.getWidth(); x++) {
 			for (int y = 0; y < board.getHeight(); y++) {
 				p.setLocation(x, y);
 
 				Agent a = board.getCell(p).getAgent();
-				if (a != null && a.isLost())
+				if (a == null) {
+					continue;
+				}
+
+				nAgents++;
+
+				if (a.isLost())
 					lost++;
+
+				if (a.getFieldsMoved() < a.getInitialDistanceToTarget()
+						|| a.getInitialDistanceToTarget() == 0.0) {
+					avgWalkingDistance += 1.0;
+				} else {
+					Double d = a.getFieldsMoved()
+							/ (double) a.getInitialDistanceToTarget();
+
+					avgWalkingDistance += (d.isInfinite() || d.isNaN()) ? 1.0
+							: d;
+				}
 			}
 		}
 
+		avgWalkingDistance /= (double) nAgents;
+
 		summary.setParamValue(Param.LOST, lost);
+		summary.setParamValue(Param.AVG_DISTANCE, avgWalkingDistance);
 
 		summary.nextSample();
+
+		try {
+			if (logWriter != null)
+				logWriter.write(String.format("%d;%s\r\n", lost,
+						WriterUtils.decimalFormat.format(avgWalkingDistance)));
+		} catch (IOException e) {
+		}
 	}
 
 	private void prepareBoardForNextStep() {
@@ -343,16 +411,9 @@ public class Simulation extends Observable implements Runnable {
 		}
 
 		double all = left + right + none;
+		double perc = (all == 0) ? 100.0 : (all - none) / all * 100.0;
 
-		if (all == 0) {
-			summary.setParamValue(Param.PERC_OF_FIELDS_AS_LANES, 100.0);
-		} else {
-			double frac = (all - none) / all * 100.0;
-			BigDecimal bd = new BigDecimal(frac).setScale(2,
-					RoundingMode.HALF_EVEN);
-			summary.setParamValue(Param.PERC_OF_FIELDS_AS_LANES,
-					bd.doubleValue());
-		}
+		summary.setParamValue(Param.PERC_OF_FIELDS_AS_LANES, perc);
 
 		// Coherence - miara spójnosci alejek (niespójnosc pojawia sie, gdy
 		// jeden pas otoczony jest dwoma innymi o przeciwnym kierunku (EWE albo
@@ -378,6 +439,13 @@ public class Simulation extends Observable implements Runnable {
 		summary.setParamValue(Param.LANES_COHERENCE, coherence);
 
 		summary.nextSample();
+
+		try {
+			if (logWriter != null)
+				logWriter.write(String.format("%s;%d;",
+						WriterUtils.decimalFormat.format(perc), coherence));
+		} catch (IOException e) {
+		}
 	}
 
 	private void clearAgentsOnExits() {
@@ -477,7 +545,7 @@ public class Simulation extends Observable implements Runnable {
 					break;
 				}
 			}
-			
+
 			newAgentLevel -= 1.0;
 		}
 	}
@@ -580,6 +648,15 @@ public class Simulation extends Observable implements Runnable {
 					: LaneDirection.WEST;
 		} else {
 			return LaneDirection.NONE;
+		}
+	}
+
+	public void finish() {
+		if (logWriter != null) {
+			try {
+				logWriter.close();
+			} catch (IOException e) {
+			}
 		}
 	}
 }

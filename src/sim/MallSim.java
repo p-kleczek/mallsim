@@ -1,6 +1,8 @@
 package sim;
 
 import java.awt.EventQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.swing.UIManager;
 
@@ -20,17 +22,19 @@ public class MallSim {
 	private static VideoRecorder videoRecorder = null;
 
 	static boolean isSuspended = false;
-	
+
 	static Thread simThread = null;
+	
+	private final static Logger LOGGER = Logger
+			.getLogger(Logger.GLOBAL_LOGGER_NAME);
 
 	// Uwaga! Ważna jest kolejnosc!
 	static {
 		videoRecorder = new AviRecorder();
 		frame = new MallFrame(videoRecorder);
 		simulation = new Simulation(videoRecorder);
-		
-	}
 
+	}
 
 	public static MallFrame getFrame() {
 		return frame;
@@ -48,6 +52,19 @@ public class MallSim {
 	 * Launch the application.
 	 */
 	public static void main(String[] args) {
+
+		LOGGER.setLevel(Level.SEVERE);
+		
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+
+			@Override
+			public void run() {
+				if (simulation != null)
+					simulation.finish();
+			}
+
+		});
+
 		EventQueue.invokeLater(new Runnable() {
 
 			public void run() {
@@ -66,22 +83,23 @@ public class MallSim {
 	public static void runSimulation() {
 		Mall mall = ResourceManager.loadShoppingMall(mallName);
 		simulation.setMall(mall);
+		simulation.configureLogFile();
 
 		frame.setMall(simulation.getMall());
 		frame.setVisible(true);
 
 		videoRecorder.setSource(frame);
-		
+
 		frame.getSummaryTable().clear();
 
-		
 		simulation.addObserver(frame.getBoard());
 
-		if (simThread != null)
+		if (simThread != null) {
 			simThread.stop();
-		
+		}
+
 		simThread = new Thread(simulation);
-		
+
 		simThread.start();
 
 		if (isSuspended)

@@ -22,3 +22,6 @@ docs/html
 # Settings
 /.pmd
 *.prefs
+
+# Logs
+logs/*.log

@@ -24,7 +24,7 @@ public class GuiState {
         return selectedAgent;
     }
 
-    public static boolean isTestMode = false;
+    public static boolean isTestMode = true;
 
     public static void setSelectedAgent(Agent selectedAgent, MallFrame frame) {
 
