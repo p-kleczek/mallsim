@@ -583,6 +583,7 @@ public class MallFrame extends JFrame {
 	public boolean chooseFile() {
 		JFileChooser fc = new JFileChooser();
 		fc.setCurrentDirectory(GuiState.currentResourcePath.toFile());
+		fc.setAcceptAllFileFilterUsed(false);
 		FileFilter filter = new FileFilter() {
 
 			@Override
@@ -599,21 +600,32 @@ public class MallFrame extends JFrame {
 
 		int returnVal = fc.showOpenDialog(null);
 
-		if (returnVal == JFileChooser.APPROVE_OPTION) {
-			GuiState.currentResourcePath = fc.getSelectedFile().toPath();
+		if (returnVal != JFileChooser.APPROVE_OPTION) {
+			return false;
+		}
+		
+		GuiState.currentResourcePath = fc.getSelectedFile().toPath();
 
-			mntmRestart.setEnabled(true);
-			chckbxmntmPaused.setEnabled(true);
-			tglbtnPause.setEnabled(true);
-			tglbtnRecord.setEnabled(true);
+		mntmRestart.setEnabled(true);
+		chckbxmntmPaused.setEnabled(true);
+		tglbtnPause.setEnabled(true);
+		tglbtnRecord.setEnabled(true);
 
+		try {
 			MallSim.runSimulation();
-
-			if (!tglbtnPause.isSelected()) {
-				tglbtnPause.doClick();
-			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			mntmRestart.setEnabled(false);
+			chckbxmntmPaused.setEnabled(false);
+			tglbtnPause.setEnabled(false);
+			tglbtnRecord.setEnabled(false);
+			return false;
 		}
 
-		return (returnVal == JFileChooser.APPROVE_OPTION);
+		if (!tglbtnPause.isSelected()) {
+			tglbtnPause.doClick();
+		}
+
+		return true;
 	}
 }
