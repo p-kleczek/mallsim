@@ -356,24 +356,24 @@ public class GUIBoard extends JComponent implements Observer {
 
 		@Override
 		public void mouseWheelMoved(MouseWheelEvent e) {
-			int rotation = e.getWheelRotation();
-
-			if (rotation != 0) {
-				cellSize = Helpers.clamp(cellSize + resizeDelta * rotation, 3,
-						25);
-				agentSize = Helpers.clamp(agentSize + resizeDelta * rotation,
-						2, 27);
-
-				Dimension d = new Dimension(board.getWidth() * cellSize + 1,
-						board.getHeight() * cellSize + 1);
-
-				setPreferredSize(d);
-
-				repaint();
-				revalidate();
-			}
+			zoom(e.getWheelRotation());
 		}
 
+	}
+	
+	public void zoom(int step) {
+		cellSize = Helpers.clamp(cellSize + resizeDelta * step, 3,
+				25);
+		agentSize = Helpers.clamp(agentSize + resizeDelta * step,
+				2, 27);
+
+		Dimension d = new Dimension(board.getWidth() * cellSize + 1,
+				board.getHeight() * cellSize + 1);
+
+		setPreferredSize(d);
+
+		repaint();
+		revalidate();
 	}
 
 	@Override

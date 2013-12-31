@@ -10,17 +10,18 @@ import java.awt.Insets;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -35,7 +36,9 @@ import javax.swing.JSlider;
 import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
+import javax.swing.JTextArea;
 import javax.swing.JToggleButton;
+import javax.swing.KeyStroke;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.border.BevelBorder;
@@ -52,13 +55,14 @@ import sim.control.GuiState.BackgroundPolicy;
 import sim.control.GuiState.DrawTargetLinePolicy;
 import sim.control.Listeners;
 import sim.gui.actions.ExitAction;
-import sim.gui.actions.PauseResumeAction;
 import sim.model.Mall;
 import sim.model.helpers.Rand;
 import sim.util.video.VideoRecorder;
 
 @SuppressWarnings("serial")
 public class MallFrame extends JFrame {
+
+	private static final int ZOOM_STEP = 3;
 
 	private JPanel contentPane;
 	private GUIBoard guiBoard;
@@ -71,10 +75,19 @@ public class MallFrame extends JFrame {
 	private final static Logger LOGGER = Logger
 			.getLogger(Logger.GLOBAL_LOGGER_NAME);
 
+	private JMenuItem mntmRestart;
+	private JCheckBoxMenuItem chckbxmntmPaused;
+	private JToggleButton tglbtnPause;
+	private JToggleButton tglbtnRecord;
+
+	private static MallFrame instance = null;
+
 	/**
 	 * Create the frame.
 	 */
 	public MallFrame(VideoRecorder aviRecorder) {
+		instance = this;
+
 		this.videoRecorder = aviRecorder;
 
 		setTitle("MallSim");
@@ -106,37 +119,13 @@ public class MallFrame extends JFrame {
 		mntmLoadMall.addActionListener(new ActionListener() {
 
 			public void actionPerformed(ActionEvent arg0) {
-
-				// XXX: tymczasowe
-				File currentDirectory = new File("./data/malls");
-				JFileChooser fc = new JFileChooser(currentDirectory);
-				FileFilter filter = new FileFilter() {
-
-					@Override
-					public String getDescription() {
-						return "MALL files";
-					}
-
-					@Override
-					public boolean accept(File f) {
-						return f.isDirectory()
-								|| f.getName().matches(".*_map\\.bmp");
-					}
-				};
-				fc.setFileFilter(filter);
-
-				int returnVal = fc.showOpenDialog(null);
-
-				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					MallSim.setMallName(fc.getSelectedFile().getPath());
-					MallSim.runSimulation();
-				}
-
+				chooseFile();
 			}
 		});
 		mnSimulation.add(mntmLoadMall);
 
-		JMenuItem mntmRestart = new JMenuItem("Restart");
+		mntmRestart = new JMenuItem("Restart");
+		mntmRestart.setEnabled(false);
 		mntmRestart.addActionListener(new ActionListener() {
 
 			public void actionPerformed(ActionEvent arg0) {
@@ -146,8 +135,22 @@ public class MallFrame extends JFrame {
 		});
 		mnSimulation.add(mntmRestart);
 
-		JCheckBoxMenuItem chckbxmntmPaused = new JCheckBoxMenuItem(
-				new PauseResumeAction());
+		chckbxmntmPaused = new JCheckBoxMenuItem(new AbstractAction() {
+
+			{
+				putValue(Action.NAME, "Paused");
+				putValue(Action.MNEMONIC_KEY, new Integer(KeyEvent.VK_P));
+				putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(
+						KeyEvent.VK_P, ActionEvent.ALT_MASK));
+			}
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				tglbtnPause.doClick();
+			}
+		});
+
+		chckbxmntmPaused.setEnabled(false);
 		mnSimulation.add(chckbxmntmPaused);
 
 		JMenuItem mntmSeed = new JMenuItem("Seed");
@@ -167,21 +170,54 @@ public class MallFrame extends JFrame {
 		});
 		mnSimulation.add(mntmSeed);
 
-		JCheckBoxMenuItem mntmTestMode = new JCheckBoxMenuItem("Test mode");
-		mntmTestMode.addItemListener(new ItemListener() {
+		JMenu mnView = new JMenu("View");
+		mnSimulation.setMnemonic('V');
+		menuBar.add(mnView);
 
-			@Override
-			public void itemStateChanged(ItemEvent e) {
-				GuiState.isTestMode = e.getStateChange() == ItemEvent.SELECTED;
+		JMenuItem mntmZoomIn = new JMenuItem("Zoom in");
+		mntmZoomIn.setAccelerator(KeyStroke.getKeyStroke((char) KeyEvent.VK_EQUALS));
+		mntmZoomIn.addActionListener(new ActionListener() {
+
+			public void actionPerformed(ActionEvent arg0) {
+				guiBoard.zoom(ZOOM_STEP);
 			}
 		});
-		mnSimulation.add(mntmTestMode);
+		mnView.add(mntmZoomIn);
+
+		JMenuItem mntmZoomOut = new JMenuItem("Zoom out");
+		mntmZoomOut.setAccelerator(KeyStroke.getKeyStroke((char) KeyEvent.VK_MINUS));
+		mntmZoomOut.addActionListener(new ActionListener() {
+
+			public void actionPerformed(ActionEvent arg0) {
+				guiBoard.zoom(-ZOOM_STEP);
+			}
+		});
+		mnView.add(mntmZoomOut);
 
 		JMenu mnHelp = new JMenu("Help");
 		mnHelp.setMnemonic('H');
 		menuBar.add(mnHelp);
 
 		JMenuItem mntmAbout = new JMenuItem("About");
+		mntmAbout.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				JDialog dlg = new JDialog(instance);
+				dlg.setTitle("About...");
+				dlg.setModal(true);
+
+				JTextArea ta = new JTextArea(
+						"Author: Paweł Kłeczek\nCoded in 2013");
+				ta.setEditable(false);
+				dlg.add(ta);
+				ta.setPreferredSize(new Dimension(150, 50));
+
+				dlg.pack();
+				dlg.revalidate();
+				dlg.setVisible(true);
+			}
+		});
 		mnHelp.add(mntmAbout);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(0, 0, 0, 0));
@@ -207,10 +243,6 @@ public class MallFrame extends JFrame {
 		createSummaryTab(tabbedPane);
 
 		createBoardPanel(splitPane);
-
-		tabbedPane.setSelectedIndex(2);
-
-		setDefaults();
 	}
 
 	public void setMall(Mall mall) {
@@ -237,7 +269,8 @@ public class MallFrame extends JFrame {
 		GridBagLayout gbl_propertiesPanel = new GridBagLayout();
 		gbl_propertiesPanel.columnWidths = new int[] { 1, 0 };
 		gbl_propertiesPanel.rowHeights = new int[] { 1, 0 };
-		gbl_propertiesPanel.columnWeights = new double[] { 1.0,
+		gbl_propertiesPanel.columnWeights = new double[] {
+				1.0,
 				Double.MIN_VALUE };
 		gbl_propertiesPanel.rowWeights = new double[] { 0.0, Double.MIN_VALUE };
 		propertiesPanel.setLayout(gbl_propertiesPanel);
@@ -263,8 +296,17 @@ public class MallFrame extends JFrame {
 		gbl_tabDisplay.columnWidths = new int[] { 306, 0 };
 		gbl_tabDisplay.rowHeights = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 		gbl_tabDisplay.columnWeights = new double[] { 1.0, Double.MIN_VALUE };
-		gbl_tabDisplay.rowWeights = new double[] { 0.0, 0.0, 0.0, 0.0, 1.0,
-				0.0, 1.0, 0.0, 1.0, Double.MIN_VALUE };
+		gbl_tabDisplay.rowWeights = new double[] {
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				1.0,
+				0.0,
+				1.0,
+				0.0,
+				1.0,
+				Double.MIN_VALUE };
 		tabDisplay.setLayout(gbl_tabDisplay);
 
 		JPanel backgroundContentPanel = new JPanel();
@@ -409,7 +451,9 @@ public class MallFrame extends JFrame {
 		sldSimulationSpeed.setName("Simulation speed");
 		sldSimulationSpeed.setValue(100);
 
-		JToggleButton tglbtnPause = new JToggleButton("Pause");
+		tglbtnPause = new JToggleButton("Pause");
+		tglbtnPause.setSelected(false);
+		tglbtnPause.setEnabled(false);
 		tglbtnPause.addActionListener(new ActionListener() {
 
 			public void actionPerformed(ActionEvent e) {
@@ -422,6 +466,8 @@ public class MallFrame extends JFrame {
 					button.setText("Pause");
 					MallSim.setThreadState(false);
 				}
+
+				chckbxmntmPaused.setSelected(button.isSelected());
 			}
 		});
 		GridBagConstraints gbc_tglbtnPause = new GridBagConstraints();
@@ -438,7 +484,8 @@ public class MallFrame extends JFrame {
 		gbc_panel.gridy = 6;
 		tabDisplay.add(panel, gbc_panel);
 
-		JToggleButton tglbtnRecord = new JToggleButton("Record");
+		tglbtnRecord = new JToggleButton("Record");
+		tglbtnRecord.setEnabled(false);
 		panel.add(tglbtnRecord);
 
 		Component horizontalStrut = Box.createHorizontalStrut(20);
@@ -464,17 +511,13 @@ public class MallFrame extends JFrame {
 				if (b.isSelected()) {
 					try {
 						MallFrame.this.videoRecorder.prepare();
-					} catch (IOException e1) {
-						e1.printStackTrace();
-					} catch (AWTException e1) {
+					} catch (IOException | AWTException e1) {
 						e1.printStackTrace();
 					}
 				} else {
 					try {
 						MallFrame.this.videoRecorder.finish();
-					} catch (IOException e1) {
-						e1.printStackTrace();
-					} catch (AWTException e1) {
+					} catch (IOException | AWTException e1) {
 						e1.printStackTrace();
 					}
 				}
@@ -492,10 +535,12 @@ public class MallFrame extends JFrame {
 			rdbtnAll.doClick();
 			break;
 		case SELECTION_ROUTE:
+			rdbtnSelectionRoute.doClick();
 			break;
 		default:
 			break;
 		}
+
 	}
 
 	private void createPropertiesTab(JSplitPane splitPane,
@@ -505,7 +550,8 @@ public class MallFrame extends JFrame {
 		GridBagLayout gbl_propertiesPanel = new GridBagLayout();
 		gbl_propertiesPanel.columnWidths = new int[] { 1, 0 };
 		gbl_propertiesPanel.rowHeights = new int[] { 1, 0 };
-		gbl_propertiesPanel.columnWeights = new double[] { 1.0,
+		gbl_propertiesPanel.columnWeights = new double[] {
+				1.0,
 				Double.MIN_VALUE };
 		gbl_propertiesPanel.rowWeights = new double[] { 0.0, Double.MIN_VALUE };
 		propertiesPanel.setLayout(gbl_propertiesPanel);
@@ -516,10 +562,6 @@ public class MallFrame extends JFrame {
 		gbc_propertiesTable.gridx = 0;
 		gbc_propertiesTable.gridy = 0;
 		propertiesPanel.add(propertiesTable, gbc_propertiesTable);
-	}
-
-	private void setDefaults() {
-		GuiState.backgroundPolicy = BackgroundPolicy.LANES;
 	}
 
 	public GUIBoard getBoard() {
@@ -538,4 +580,40 @@ public class MallFrame extends JFrame {
 		return boardScrollPane;
 	}
 
+	public boolean chooseFile() {
+		JFileChooser fc = new JFileChooser();
+		fc.setCurrentDirectory(GuiState.currentResourcePath.toFile());
+		FileFilter filter = new FileFilter() {
+
+			@Override
+			public String getDescription() {
+				return "MALL files";
+			}
+
+			@Override
+			public boolean accept(File f) {
+				return f.isDirectory() || f.getName().matches(".*_map\\.bmp");
+			}
+		};
+		fc.setFileFilter(filter);
+
+		int returnVal = fc.showOpenDialog(null);
+
+		if (returnVal == JFileChooser.APPROVE_OPTION) {
+			GuiState.currentResourcePath = fc.getSelectedFile().toPath();
+
+			mntmRestart.setEnabled(true);
+			chckbxmntmPaused.setEnabled(true);
+			tglbtnPause.setEnabled(true);
+			tglbtnRecord.setEnabled(true);
+
+			MallSim.runSimulation();
+
+			if (!tglbtnPause.isSelected()) {
+				tglbtnPause.doClick();
+			}
+		}
+
+		return (returnVal == JFileChooser.APPROVE_OPTION);
+	}
 }

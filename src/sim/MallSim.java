@@ -6,6 +6,7 @@ import java.util.logging.Logger;
 
 import javax.swing.UIManager;
 
+import sim.control.GuiState;
 import sim.control.ResourceManager;
 import sim.gui.GUIBoard;
 import sim.gui.MallFrame;
@@ -16,7 +17,6 @@ import sim.util.video.VideoRecorder;
 public class MallSim {
 
 	public static MallFrame frame = null;
-	private static String mallName = "./data/malls/sd-test_map.bmp";
 
 	private static Simulation simulation = null;
 	private static VideoRecorder videoRecorder = null;
@@ -74,19 +74,20 @@ public class MallSim {
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
-
-				runSimulation();
+				
+				frame.setVisible(true);
 			}
 		});
 	}
 
 	public static void runSimulation() {
-		Mall mall = ResourceManager.loadShoppingMall(mallName);
+		Mall mall = ResourceManager.loadShoppingMall(GuiState.currentResourcePath);
 		simulation.setMall(mall);
 		simulation.configureLogFile();
 
 		frame.setMall(simulation.getMall());
-		frame.setVisible(true);
+		frame.revalidate();
+		frame.repaint();
 
 		videoRecorder.setSource(frame);
 
@@ -105,14 +106,6 @@ public class MallSim {
 		if (isSuspended)
 			simThread.suspend();
 	}
-
-	public static void setMallName(String mallName) {
-		MallSim.mallName = mallName;
-	}
-
-	// public static Thread getThread() {
-	// return simThread;
-	// }
 
 	synchronized public static void setThreadState(boolean _isSuspended) {
 		isSuspended = _isSuspended;

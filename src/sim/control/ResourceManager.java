@@ -5,6 +5,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,8 +34,6 @@ public class ResourceManager {
 	public static final int MAP_ATTRACTOR = 0x7F;
 	public static final int MAP_SPAWNER = 0xFF;
 
-	public static final String MAPS_FOLDER_PATH = "./data/malls/";
-
 	private final static Logger LOGGER = Logger
 			.getLogger(Logger.GLOBAL_LOGGER_NAME);
 
@@ -44,9 +43,10 @@ public class ResourceManager {
 	 * @param mallName
 	 *            name of a map to be loaded
 	 */
-	public static Mall loadShoppingMall(String mapPath) {
-		String mallFile = mapPath;
-		String featureMap = mapPath.replace("_map.", "_feat.");
+	public static Mall loadShoppingMall(Path mapPath) {
+		Path mallFile = mapPath;
+		String featureMapStr = mapPath.toString().replace("_map.", "_feat.");
+		Path featureMap = (new File(featureMapStr)).toPath();
 
 		Mall mall = new Mall();
 
@@ -66,10 +66,10 @@ public class ResourceManager {
 		int w = 0;
 
 		try {
-			mallImage = ImageIO.read(new File(mallFile));
+			mallImage = ImageIO.read(mallFile.toFile());
 			mallRaster = mallImage.getData();
 
-			mapImage = ImageIO.read(new File(featureMap));
+			mapImage = ImageIO.read(featureMap.toFile());
 			mapRaster = mapImage.getData();
 
 			h = mallRaster.getHeight();

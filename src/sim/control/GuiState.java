@@ -1,5 +1,8 @@
 package sim.control;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import sim.gui.MallFrame;
 import sim.model.Agent;
 
@@ -24,8 +27,6 @@ public class GuiState {
         return selectedAgent;
     }
 
-    public static boolean isTestMode = true;
-
     public static void setSelectedAgent(Agent selectedAgent, MallFrame frame) {
 
         // TODO: uaktualnić kontrolki
@@ -39,5 +40,7 @@ public class GuiState {
         
         frame.getPropertiesTable().updateAgentData(getSelectedAgent());
     }
+    
+    public static Path currentResourcePath = Paths.get("./resources/malls").toAbsolutePath();
 
 }

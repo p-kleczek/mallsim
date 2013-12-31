@@ -103,10 +103,6 @@ public class Tactical {
 			last = target;
 		}
 
-		// FIXME: na czas testów (agent ma wchodzić na pole I/O)
-		if (GuiState.isTestMode) {
-			agent.addTarget(targets[0]);
-		}
 	}
 
 	public static Point[] pickTargets(Board board, Agent agent, int numTargets) {
