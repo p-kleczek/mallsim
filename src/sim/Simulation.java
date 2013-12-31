@@ -4,14 +4,12 @@ import java.awt.Point;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -102,9 +100,12 @@ public class Simulation extends Observable implements Runnable {
 			}
 		}
 
-		File logFile = new File("./logs/" + System.currentTimeMillis() + ".csv");
-		Charset charset = Charset.forName("US-ASCII");
 		try {
+			Files.createDirectories(Paths.get("logs"));
+			
+			File logFile = new File("./logs/" + System.currentTimeMillis() + ".csv");
+			Charset charset = Charset.forName("US-ASCII");
+
 			logWriter = Files.newBufferedWriter(logFile.toPath(), charset);
 			logWriter
 					.write("\"% of fields as lanes\";\"lanes coherence\";\"lost\";\"avg dist\"\r\n");

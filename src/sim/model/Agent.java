@@ -4,6 +4,7 @@ import java.awt.Point;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -140,8 +141,11 @@ public class Agent extends Observable {
 	private void loadProperties(MovementBehavior movementBehavior)
 			throws FileNotFoundException, IOException {
 		Properties prop = new Properties();
-		prop.load(new FileInputStream(String.format("./data/agents/%s.agent",
-				movementBehavior.getFilename())));
+		
+		String filename = String.format("/agents/%s.agent",
+				movementBehavior.getFilename());
+		
+		prop.load(Agent.class.getResourceAsStream(filename));
 
 		vMax = Integer.valueOf(prop.getProperty("speed"));
 		agility = Double.valueOf(prop.getProperty("agility"));

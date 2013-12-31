@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
+import javax.swing.JOptionPane;
 
 import sim.model.Agent;
 import sim.model.Agent.MovementBehavior;
@@ -161,6 +162,7 @@ public class ResourceManager {
 
 		} catch (IOException e) {
 			e.printStackTrace();
+			JOptionPane.showMessageDialog(null, "Could not load a mall file!", "Error", JOptionPane.ERROR_MESSAGE);
 		}
 
 		LOGGER.info("Board created!");
